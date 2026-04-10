@@ -12,9 +12,8 @@ type Config struct {
 }
 
 func LoadConfig() Config {
-	if err := godotenv.Load(); err != nil {
-		log.Fatalf("Failed to read .env file: %v", err)
-	}
+	// NOTE: Error is ignored because the .env file will notexist inside the container
+	_ = godotenv.Load()
 
 	var cfg Config
 	if err := env.Parse(&cfg); err != nil {
