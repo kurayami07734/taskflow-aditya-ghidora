@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -20,10 +21,13 @@ func CreateBaseRouter() *chi.Mux {
 }
 
 func main() {
+	cfg := LoadConfig()
 	r := CreateBaseRouter()
 
-	log.Printf("Starting server on 8080...")
-	if err := http.ListenAndServe(":8080", r); err != nil {
-		log.Fatalf("Failed to start server on 8080: %v", err)
+	addr := fmt.Sprintf(":%d", cfg.Port)
+	log.Printf("Starting server on %d...", cfg.Port)
+
+	if err := http.ListenAndServe(addr, r); err != nil {
+		log.Fatalf("Failed to start server on %d: %v", cfg.Port, err)
 	}
 }
