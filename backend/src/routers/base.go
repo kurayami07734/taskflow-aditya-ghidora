@@ -18,8 +18,10 @@ func CreateBaseRouter(db *sqlx.DB, cfg utils.Config) *chi.Mux {
 	})
 
 	authR := CreateAuthRouter(db, cfg)
-
 	r.Mount("/auth", authR)
+
+	projectR := CreateProjectRouter(db, cfg)
+	r.Mount("/projects", projectR)
 
 	return r
 }
