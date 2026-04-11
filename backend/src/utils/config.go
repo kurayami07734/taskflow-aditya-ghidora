@@ -1,4 +1,4 @@
-package main
+package utils
 
 import (
 	"fmt"
@@ -20,7 +20,7 @@ type Config struct {
 	}
 }
 
-func (c Config) getDbUrl() string {
+func (c Config) GetDbUrl() string {
 	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
 		c.Db.User, c.Db.Password, c.Db.Host, c.Db.Port, c.Db.Name, c.Db.SslMode)
 }
