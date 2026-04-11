@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"reflect"
 	"time"
@@ -128,6 +129,7 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 
 	updatedTask, err := h.TaskStore.Update(taskID, title, description, status, priority, assigneeID, dueDate)
 	if err != nil {
+		slog.Error("Failed to update task", "error", err, "task_id", taskID)
 		utils.WriteError(w, http.StatusInternalServerError, "failed to update task")
 		return
 	}

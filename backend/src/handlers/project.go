@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"reflect"
 
@@ -50,6 +51,7 @@ func (h *ProjectHandler) ListProjects(w http.ResponseWriter, r *http.Request) {
 
 	projects, err := h.Store.GetByOwnerID(userID)
 	if err != nil {
+		slog.Error("Failed to fetch projects", "error", err, "user_id", userID)
 		utils.WriteError(w, http.StatusInternalServerError, "failed to fetch projects")
 		return
 	}
@@ -107,6 +109,7 @@ func (h *ProjectHandler) CreateProject(w http.ResponseWriter, r *http.Request) {
 
 	project, err := h.Store.Create(req.Name, req.Description, userID)
 	if err != nil {
+		slog.Error("Failed to create project", "error", err, "user_id", userID)
 		utils.WriteError(w, http.StatusInternalServerError, "failed to create project")
 		return
 	}
@@ -149,6 +152,7 @@ func (h *ProjectHandler) GetProject(w http.ResponseWriter, r *http.Request) {
 
 	tasks, err := h.TaskStore.GetByProjectID(projectID)
 	if err != nil {
+		slog.Error("Failed to fetch tasks for project", "error", err, "project_id", projectID)
 		utils.WriteError(w, http.StatusInternalServerError, "failed to fetch tasks")
 		return
 	}
@@ -252,6 +256,7 @@ func (h *ProjectHandler) UpdateProject(w http.ResponseWriter, r *http.Request) {
 
 	updatedProject, err := h.Store.Update(projectID, name, description)
 	if err != nil {
+		slog.Error("Failed to update project", "error", err, "project_id", projectID)
 		utils.WriteError(w, http.StatusInternalServerError, "failed to update project")
 		return
 	}
@@ -292,6 +297,7 @@ func (h *ProjectHandler) DeleteProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.Store.Delete(projectID); err != nil {
+		slog.Error("Failed to delete project", "error", err, "project_id", projectID)
 		utils.WriteError(w, http.StatusInternalServerError, "failed to delete project")
 		return
 	}
