@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 	"github.com/kurayami07734/taskflow-aditya-ghidora/src/middleware"
 	"github.com/kurayami07734/taskflow-aditya-ghidora/src/models"
 	"github.com/kurayami07734/taskflow-aditya-ghidora/src/utils"
@@ -89,6 +91,41 @@ func (h *ProjectHandler) CreateProject(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(projectResponse{
+		ID:          project.ID.String(),
+		Name:        project.Name,
+		Description: project.Description,
+		OwnerID:     project.OwnerID.String(),
+		CreatedAt:   project.CreatedAt.Format("2006-01-02T15:04:05Z"),
+	})
+}
+
+func (h *ProjectHandler) GetProject(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		utils.WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	projectIDStr := chi.URLParam(r, "id")
+	projectID, err := uuid.Parse(projectIDStr)
+	if err != nil {
+		utils.WriteError(w, http.StatusBadRequest, "invalid project id")
+		return
+	}
+
+	project, err := h.Store.GetByID(projectID)
+	if err != nil {
+		utils.WriteError(w, http.StatusNotFound, "project not found")
+		return
+	}
+
+	if project.OwnerID != userID {
+		utils.WriteError(w, http.StatusForbidden, "you don't have permission to access this project")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(projectResponse{
 		ID:          project.ID.String(),
 		Name:        project.Name,
