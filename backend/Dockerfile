@@ -10,7 +10,7 @@ COPY . .
 
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg/mod \
-    CGO_ENABLED=0 GOOS=linux go build -o api .
+    CGO_ENABLED=0 GOOS=linux go build -o api ./src
 
 FROM alpine:latest
 

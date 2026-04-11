@@ -8,4 +8,4 @@
 Dockerfile
 compose.yml
 
-*_test.go
+tests/

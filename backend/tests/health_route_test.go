@@ -1,13 +1,15 @@
-package main
+package tests
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/kurayami07734/taskflow-aditya-ghidora/src/routers"
 )
 
 func TestHealthRoute(t *testing.T) {
-	r := CreateBaseRouter()
+	r := routers.CreateBaseRouter()
 	rr := httptest.NewRecorder()
 
 	req, _ := http.NewRequest("GET", "/health", nil)
