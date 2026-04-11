@@ -47,6 +47,22 @@ func (s *ProjectStore) GetByID(id uuid.UUID) (*Project, error) {
 	return &p, nil
 }
 
+func (s *ProjectStore) Update(id uuid.UUID, name, description string) (*Project, error) {
+	var p Project
+	query := `
+		UPDATE projects 
+		SET name = $1, description = $2
+		WHERE id = $3
+		RETURNING id, name, description, owner_id, created_at`
+
+	err := s.DB.QueryRowx(query, name, description, id).StructScan(&p)
+	if err != nil {
+		return nil, err
+	}
+
+	return &p, nil
+}
+
 func (s *ProjectStore) GetByOwnerID(ownerID uuid.UUID) ([]Project, error) {
 	var projects []Project
 	query := `SELECT id, name, description, owner_id, created_at FROM projects WHERE owner_id = $1 ORDER BY created_at DESC`
