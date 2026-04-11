@@ -9,18 +9,20 @@ import (
 )
 
 type Config struct {
-	Port       int    `env:"PORT" envDefault:"8080"`
-	DbPort     int    `env:"DB_PORT" envDefault:"5432"`
-	DbName     string `env:"DB_NAME"`
-	DbHost     string `env:"DB_HOST"`
-	DbUser     string `env:"DB_USER"`
-	DbPassword string `env:"DB_PASSWORD"`
-	DbSslMode  string `env:"DB_SSL_MODE"`
+	Port int `env:"PORT" envDefault:"8080"`
+	Db   struct {
+		Port     int    `env:"DB_PORT" envDefault:"5432"`
+		Name     string `env:"DB_NAME"`
+		Host     string `env:"DB_HOST"`
+		User     string `env:"DB_USER"`
+		Password string `env:"DB_PASSWORD"`
+		SslMode  string `env:"DB_SSL_MODE"`
+	}
 }
 
 func (c Config) getDbUrl() string {
 	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
-		c.DbUser, c.DbPassword, c.DbHost, c.DbPort, c.DbName, c.DbSslMode)
+		c.Db.User, c.Db.Password, c.Db.Host, c.Db.Port, c.Db.Name, c.Db.SslMode)
 }
 
 func LoadConfig() Config {

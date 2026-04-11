@@ -19,7 +19,7 @@ func main() {
 	cfg := LoadConfig()
 	router := routers.CreateBaseRouter()
 
-	log.Printf("Connecting to %s database at %s:%d...", cfg.DbName, cfg.DbHost, cfg.DbPort)
+	log.Printf("Connecting to %s database at %s:%d...", cfg.Db.Name, cfg.Db.Host, cfg.Db.Port)
 	db, err := sqlx.Connect("postgres", cfg.getDbUrl())
 
 	if err != nil {
