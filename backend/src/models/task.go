@@ -77,7 +77,7 @@ func (s *TaskStore) GetByProjectID(projectID uuid.UUID) ([]Task, error) {
 	return tasks, nil
 }
 
-func (s *TaskStore) Update(id uuid.UUID, title, description *string, status, priority *TaskStatus, assigneeID *uuid.UUID, dueDate *time.Time) (*Task, error) {
+func (s *TaskStore) Update(id uuid.UUID, title, description *string, status *TaskStatus, priority *TaskPriority, assigneeID *uuid.UUID, dueDate *time.Time) (*Task, error) {
 	var t Task
 
 	query := `
