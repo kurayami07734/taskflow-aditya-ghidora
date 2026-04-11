@@ -13,10 +13,12 @@ func CreateAuthRouter(db *sqlx.DB, cfg utils.Config) *chi.Mux {
 	r := chi.NewRouter()
 
 	userStore := &models.UserStore{DB: db}
-	h := handlers.RegisterHandler{Store: userStore, Config: cfg}
+	registerHandler := handlers.RegisterHandler{Store: userStore, Config: cfg}
+	loginHandler := handlers.LoginHandler{Store: userStore, Config: cfg}
 
 	r.Use(middleware.Logger)
-	r.Post("/register", h.RegisterHandler)
+	r.Post("/register", registerHandler.RegisterHandler)
+	r.Post("/login", loginHandler.LoginHandler)
 
 	return r
 }

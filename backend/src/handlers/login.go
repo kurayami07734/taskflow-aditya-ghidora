@@ -11,23 +11,23 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type RegisterHandler struct {
+type LoginHandler struct {
 	Store  *models.UserStore
 	Config utils.Config
 }
-type registerRequest struct {
-	Name     string `json:"name" validate:"required"`
+
+type loginRequest struct {
 	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required,min=8"`
+	Password string `json:"password" validate:"required"`
 }
 
-type registerResponse struct {
+type loginResponse struct {
 	Token string       `json:"token"`
 	User  userResponse `json:"user"`
 }
 
-func (h *RegisterHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
-	var req registerRequest
+func (h *LoginHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
+	var req loginRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.WriteError(w, http.StatusBadRequest, "Invalid request payload")
@@ -40,35 +40,25 @@ func (h *RegisterHandler) RegisterHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	existingUser, err := h.Store.GetByEmail(req.Email)
-	if existingUser != nil {
-		utils.WriteError(w, http.StatusBadRequest, "User already registered!")
+	user, err := h.Store.GetByEmail(req.Email)
+	if err != nil {
+		utils.WriteError(w, http.StatusBadRequest, "Invalid credentials")
 		return
 	}
 
-	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), 12)
-	if err != nil {
-		log.Printf("Failed to generate password: %v", err)
-		utils.WriteError(w, http.StatusInternalServerError, "Internal server error")
-		return
-	}
-
-	user, err := h.Store.Create(req.Name, req.Email, string(hashed))
-	if err != nil {
-		log.Printf("Failed to save user: %v", err)
-		utils.WriteError(w, http.StatusInternalServerError, "Internal server error")
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, "Invalid credentials")
 		return
 	}
 
 	token, err := utils.GenerateToken(user.ID, user.Email, h.Config.JwtSecret)
-
 	if err != nil {
 		log.Printf("Failed to generate token: %v", err)
 		utils.WriteError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 
-	res := registerResponse{
+	res := loginResponse{
 		Token: token,
 		User: userResponse{
 			ID:    user.ID,
@@ -78,6 +68,6 @@ func (h *RegisterHandler) RegisterHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(res)
 }
