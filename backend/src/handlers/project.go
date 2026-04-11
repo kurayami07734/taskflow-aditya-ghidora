@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/kurayami07734/taskflow-aditya-ghidora/src/middleware"
 	"github.com/kurayami07734/taskflow-aditya-ghidora/src/models"
 	"github.com/kurayami07734/taskflow-aditya-ghidora/src/utils"
@@ -23,6 +24,11 @@ type projectResponse struct {
 
 type listProjectsResponse struct {
 	Projects []projectResponse `json:"projects"`
+}
+
+type createProjectRequest struct {
+	Name        string `json:"name" validate:"required,min=3"`
+	Description string `json:"description"`
 }
 
 func (h *ProjectHandler) ListProjects(w http.ResponseWriter, r *http.Request) {
@@ -54,4 +60,40 @@ func (h *ProjectHandler) ListProjects(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
+}
+
+func (h *ProjectHandler) CreateProject(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		utils.WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	var req createProjectRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	var validate = validator.New()
+	if err := validate.Struct(req); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	project, err := h.Store.Create(req.Name, req.Description, userID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, "failed to create project")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(projectResponse{
+		ID:          project.ID.String(),
+		Name:        project.Name,
+		Description: project.Description,
+		OwnerID:     project.OwnerID.String(),
+		CreatedAt:   project.CreatedAt.Format("2006-01-02T15:04:05Z"),
+	})
 }
