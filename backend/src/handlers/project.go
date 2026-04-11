@@ -201,3 +201,36 @@ func (h *ProjectHandler) UpdateProject(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:   updatedProject.CreatedAt.Format("2006-01-02T15:04:05Z"),
 	})
 }
+
+func (h *ProjectHandler) DeleteProject(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		utils.WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	projectIDStr := chi.URLParam(r, "id")
+	projectID, err := uuid.Parse(projectIDStr)
+	if err != nil {
+		utils.WriteError(w, http.StatusBadRequest, "invalid project id")
+		return
+	}
+
+	project, err := h.Store.GetByID(projectID)
+	if err != nil {
+		utils.WriteError(w, http.StatusNotFound, "project not found")
+		return
+	}
+
+	if project.OwnerID != userID {
+		utils.WriteError(w, http.StatusForbidden, "you don't have permission to access this project")
+		return
+	}
+
+	if err := h.Store.Delete(projectID); err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, "failed to delete project")
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
