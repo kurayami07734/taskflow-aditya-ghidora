@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"reflect"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/kurayami07734/taskflow-aditya-ghidora/src/models"
@@ -30,13 +31,27 @@ func (h *LoginHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var req loginRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, "Invalid request payload")
+		utils.WriteError(w, http.StatusBadRequest, "invalid request payload")
 		return
 	}
 
 	var validate = validator.New()
 	if err := validate.Struct(req); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, "Invalid request payload")
+		validationErrors := err.(validator.ValidationErrors)
+		fields := make(map[string]string)
+		structType := reflect.TypeOf(req)
+		for _, e := range validationErrors {
+			jsonField := getJSONFieldName(structType, e.Field())
+			switch e.Tag() {
+			case "required":
+				fields[jsonField] = "is required"
+			case "email":
+				fields[jsonField] = "must be a valid email"
+			default:
+				fields[jsonField] = "is invalid"
+			}
+		}
+		utils.WriteErrorWithFields(w, http.StatusBadRequest, "validation failed", fields)
 		return
 	}
 
