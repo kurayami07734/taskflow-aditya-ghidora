@@ -37,7 +37,7 @@ type TaskStore struct {
 	DB *sqlx.DB
 }
 
-func (s *TaskStore) Create(title, description string, projectID uuid.UUID, status, priority TaskStatus, assigneeID *uuid.UUID, dueDate *time.Time) (*Task, error) {
+func (s *TaskStore) Create(title, description string, projectID uuid.UUID, status TaskStatus, priority TaskPriority, assigneeID *uuid.UUID, dueDate *time.Time) (*Task, error) {
 	var t Task
 
 	query := `
