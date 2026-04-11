@@ -14,15 +14,17 @@ import (
 )
 
 type ProjectHandler struct {
-	Store *models.ProjectStore
+	Store     *models.ProjectStore
+	TaskStore *models.TaskStore
 }
 
 type projectResponse struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	OwnerID     string `json:"owner_id"`
-	CreatedAt   string `json:"created_at"`
+	ID          string         `json:"id"`
+	Name        string         `json:"name"`
+	Description string         `json:"description"`
+	OwnerID     string         `json:"owner_id"`
+	CreatedAt   string         `json:"created_at"`
+	Tasks       []taskResponse `json:"tasks"`
 }
 
 type listProjectsResponse struct {
@@ -145,6 +147,38 @@ func (h *ProjectHandler) GetProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tasks, err := h.TaskStore.GetByProjectID(projectID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, "failed to fetch tasks")
+		return
+	}
+
+	taskResponses := make([]taskResponse, len(tasks))
+	for i, t := range tasks {
+		var assigneeIDStr, dueDateStr *string
+		if t.AssigneeID != nil {
+			s := t.AssigneeID.String()
+			assigneeIDStr = &s
+		}
+		if t.DueDate != nil {
+			s := t.DueDate.Format("2006-01-02")
+			dueDateStr = &s
+		}
+
+		taskResponses[i] = taskResponse{
+			ID:          t.ID.String(),
+			Title:       t.Title,
+			Description: stringOrNil(t.Description),
+			Status:      string(t.Status),
+			Priority:    string(t.Priority),
+			ProjectID:   t.ProjectID.String(),
+			AssigneeID:  assigneeIDStr,
+			DueDate:     dueDateStr,
+			CreatedAt:   t.CreatedAt.Format("2006-01-02T15:04:05Z"),
+			UpdatedAt:   t.UpdatedAt.Format("2006-01-02T15:04:05Z"),
+		}
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(projectResponse{
 		ID:          project.ID.String(),
@@ -152,6 +186,7 @@ func (h *ProjectHandler) GetProject(w http.ResponseWriter, r *http.Request) {
 		Description: project.Description,
 		OwnerID:     project.OwnerID.String(),
 		CreatedAt:   project.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		Tasks:       taskResponses,
 	})
 }
 
