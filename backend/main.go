@@ -1,9 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -24,7 +29,7 @@ func CreateBaseRouter() *chi.Mux {
 
 func main() {
 	cfg := LoadConfig()
-	r := CreateBaseRouter()
+	router := CreateBaseRouter()
 
 	log.Printf("Connecting to %s database at %s:%d...", cfg.DbName, cfg.DbHost, cfg.DbPort)
 	db, err := sqlx.Connect("postgres", cfg.getDbUrl())
@@ -36,9 +41,30 @@ func main() {
 	defer db.Close()
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
-	log.Printf("Starting server on %d...", cfg.Port)
-
-	if err := http.ListenAndServe(addr, r); err != nil {
-		log.Fatalf("Failed to start server on %d: %v", cfg.Port, err)
+	srv := &http.Server{
+		Addr:    addr,
+		Handler: router,
 	}
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+			log.Fatalf("Failed to start server on %d: %v", cfg.Port, err)
+		}
+	}()
+
+	log.Printf("Started server on %d...", cfg.Port)
+
+	<-stop
+	log.Println("Recieved SIGTERM shutting down..")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal("Server forced to shutdown:", err)
+	}
+
 }
