@@ -18,6 +18,7 @@ type Config struct {
 		Password string `env:"DB_PASSWORD"`
 		SslMode  string `env:"DB_SSL_MODE"`
 	}
+	JwtSecret string `env:"JWT_SECRET"`
 }
 
 func (c Config) GetDbUrl() string {
