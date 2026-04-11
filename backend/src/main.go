@@ -12,21 +12,23 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/kurayami07734/taskflow-aditya-ghidora/src/routers"
+	"github.com/kurayami07734/taskflow-aditya-ghidora/src/utils"
 	_ "github.com/lib/pq"
 )
 
 func main() {
-	cfg := LoadConfig()
-	router := routers.CreateBaseRouter()
+	cfg := utils.LoadConfig()
 
 	log.Printf("Connecting to %s database at %s:%d...", cfg.Db.Name, cfg.Db.Host, cfg.Db.Port)
-	db, err := sqlx.Connect("postgres", cfg.getDbUrl())
+	db, err := sqlx.Connect("postgres", cfg.GetDbUrl())
 
 	if err != nil {
 		log.Fatalf("Failed to connect to database :%v", err)
 	}
 
 	defer db.Close()
+
+	router := routers.CreateBaseRouter(db, cfg)
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
 	srv := &http.Server{
