@@ -156,3 +156,42 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt:   updatedTask.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 	})
 }
+
+func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		utils.WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	taskIDStr := chi.URLParam(r, "id")
+	taskID, err := uuid.Parse(taskIDStr)
+	if err != nil {
+		utils.WriteError(w, http.StatusBadRequest, "invalid task id")
+		return
+	}
+
+	task, err := h.TaskStore.GetByID(taskID)
+	if err != nil {
+		utils.WriteError(w, http.StatusNotFound, "task not found")
+		return
+	}
+
+	project, err := h.ProjectStore.GetByID(task.ProjectID)
+	if err != nil {
+		utils.WriteError(w, http.StatusNotFound, "task not found")
+		return
+	}
+
+	if project.OwnerID != userID {
+		utils.WriteError(w, http.StatusForbidden, "you don't have permission to access this task")
+		return
+	}
+
+	if err := h.TaskStore.Delete(taskID); err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, "failed to delete task")
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

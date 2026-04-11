@@ -18,6 +18,7 @@ func CreateTaskRouter(db *sqlx.DB, cfg utils.Config) *chi.Mux {
 
 	r.Use(middleware.AuthMiddleware(cfg.JwtSecret))
 	r.Patch("/{id}", taskHandler.UpdateTask)
+	r.Delete("/{id}", taskHandler.DeleteTask)
 
 	return r
 }
