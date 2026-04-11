@@ -2,7 +2,7 @@ package utils
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/caarlos0/env/v10"
 	"github.com/joho/godotenv"
@@ -27,12 +27,11 @@ func (c Config) GetDbUrl() string {
 }
 
 func LoadConfig() Config {
-	// NOTE: Error is ignored because the .env file will not exist inside the container
 	_ = godotenv.Load()
 
 	var cfg Config
 	if err := env.Parse(&cfg); err != nil {
-		log.Fatalf("Failed to parse config: %v", err)
+		slog.Error("Failed to parse config", "error", err)
 	}
 
 	return cfg

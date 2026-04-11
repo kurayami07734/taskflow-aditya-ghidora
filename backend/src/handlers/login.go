@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 	"reflect"
 
@@ -68,7 +68,7 @@ func (h *LoginHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	token, err := utils.GenerateToken(user.ID, user.Email, h.Config.JwtSecret)
 	if err != nil {
-		log.Printf("Failed to generate token: %v", err)
+		slog.Error("Failed to generate token", "error", err)
 		utils.WriteError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}

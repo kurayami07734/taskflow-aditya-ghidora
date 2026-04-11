@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 	"reflect"
 
@@ -65,14 +65,14 @@ func (h *RegisterHandler) RegisterHandler(w http.ResponseWriter, r *http.Request
 
 	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), 12)
 	if err != nil {
-		log.Printf("Failed to generate password: %v", err)
+		slog.Error("Failed to generate password", "error", err)
 		utils.WriteError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 
 	user, err := h.Store.Create(req.Name, req.Email, string(hashed))
 	if err != nil {
-		log.Printf("Failed to save user: %v", err)
+		slog.Error("Failed to save user", "error", err)
 		utils.WriteError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
@@ -80,7 +80,7 @@ func (h *RegisterHandler) RegisterHandler(w http.ResponseWriter, r *http.Request
 	token, err := utils.GenerateToken(user.ID, user.Email, h.Config.JwtSecret)
 
 	if err != nil {
-		log.Printf("Failed to generate token: %v", err)
+		slog.Error("Failed to generate token", "error", err)
 		utils.WriteError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}

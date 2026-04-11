@@ -16,6 +16,8 @@ FROM alpine:latest
 
 WORKDIR /app
 
+RUN mkdir -p logs
+
 COPY --from=builder /app/api .
 
 CMD ["./api"]

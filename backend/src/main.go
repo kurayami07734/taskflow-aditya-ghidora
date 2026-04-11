@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,11 +18,15 @@ import (
 func main() {
 	cfg := utils.LoadConfig()
 
-	log.Printf("Connecting to %s database at %s:%d...", cfg.Db.Name, cfg.Db.Host, cfg.Db.Port)
+	logger := utils.InitLogger("logs/app.log")
+	ctx := context.Background()
+
+	logger.Info("Connecting to database", "db", cfg.Db.Name, "host", cfg.Db.Host, "port", cfg.Db.Port)
 	db, err := sqlx.Connect("postgres", cfg.GetDbUrl())
 
 	if err != nil {
-		log.Fatalf("Failed to connect to database :%v", err)
+		logger.Error("Failed to connect to database", "error", err)
+		os.Exit(1)
 	}
 
 	defer db.Close()
@@ -41,20 +44,22 @@ func main() {
 
 	go func() {
 		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-			log.Fatalf("Failed to start server on %d: %v", cfg.Port, err)
+			logger.Error("Failed to start server", "port", cfg.Port, "error", err)
+			os.Exit(1)
 		}
 	}()
 
-	log.Printf("Started server on %d...", cfg.Port)
+	logger.Info("Server started", "port", cfg.Port)
 
 	<-stop
-	log.Println("Recieved SIGTERM shutting down..")
+	logger.Warn("Received SIGTERM, shutting down")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatal("Server forced to shutdown:", err)
+		logger.Error("Server forced to shutdown", "error", err)
 	}
 
+	logger.Info("Server exited")
 }
