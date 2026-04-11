@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"reflect"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
@@ -84,7 +85,21 @@ func (h *ProjectHandler) CreateProject(w http.ResponseWriter, r *http.Request) {
 
 	var validate = validator.New()
 	if err := validate.Struct(req); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, "invalid request body")
+		validationErrors := err.(validator.ValidationErrors)
+		fields := make(map[string]string)
+		structType := reflect.TypeOf(req)
+		for _, e := range validationErrors {
+			jsonField := getJSONFieldName(structType, e.Field())
+			switch e.Tag() {
+			case "required":
+				fields[jsonField] = "is required"
+			case "min":
+				fields[jsonField] = "must be at least " + e.Param() + " characters"
+			default:
+				fields[jsonField] = "is invalid"
+			}
+		}
+		utils.WriteErrorWithFields(w, http.StatusBadRequest, "validation failed", fields)
 		return
 	}
 
@@ -173,7 +188,21 @@ func (h *ProjectHandler) UpdateProject(w http.ResponseWriter, r *http.Request) {
 
 	var validate = validator.New()
 	if err := validate.Struct(req); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, "invalid request body")
+		validationErrors := err.(validator.ValidationErrors)
+		fields := make(map[string]string)
+		structType := reflect.TypeOf(req)
+		for _, e := range validationErrors {
+			jsonField := getJSONFieldName(structType, e.Field())
+			switch e.Tag() {
+			case "required":
+				fields[jsonField] = "is required"
+			case "min":
+				fields[jsonField] = "must be at least " + e.Param() + " characters"
+			default:
+				fields[jsonField] = "is invalid"
+			}
+		}
+		utils.WriteErrorWithFields(w, http.StatusBadRequest, "validation failed", fields)
 		return
 	}
 
