@@ -146,6 +146,91 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+type listTasksResponse struct {
+	Tasks []taskResponse `json:"tasks"`
+}
+
+func (h *TaskHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		utils.WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	projectIDStr := chi.URLParam(r, "id")
+	projectID, err := uuid.Parse(projectIDStr)
+	if err != nil {
+		utils.WriteError(w, http.StatusBadRequest, "invalid project id")
+		return
+	}
+
+	project, err := h.ProjectStore.GetByID(projectID)
+	if err != nil {
+		utils.WriteError(w, http.StatusNotFound, "project not found")
+		return
+	}
+
+	if project.OwnerID != userID {
+		utils.WriteError(w, http.StatusForbidden, "you don't have permission to access this project")
+		return
+	}
+
+	statusFilter := r.URL.Query().Get("status")
+	assigneeFilter := r.URL.Query().Get("assignee")
+
+	var status *models.TaskStatus
+	if statusFilter != "" {
+		s := models.TaskStatus(statusFilter)
+		status = &s
+	}
+
+	var assigneeID *uuid.UUID
+	if assigneeFilter != "" {
+		parsed, err := uuid.Parse(assigneeFilter)
+		if err == nil {
+			assigneeID = &parsed
+		}
+	}
+
+	tasks, err := h.TaskStore.GetByProjectIDWithFilters(projectID, status, assigneeID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, "failed to fetch tasks")
+		return
+	}
+
+	resp := listTasksResponse{
+		Tasks: make([]taskResponse, len(tasks)),
+	}
+
+	for i, t := range tasks {
+		var assigneeIDStr, dueDateStr *string
+		if t.AssigneeID != nil {
+			s := t.AssigneeID.String()
+			assigneeIDStr = &s
+		}
+		if t.DueDate != nil {
+			s := t.DueDate.Format("2006-01-02")
+			dueDateStr = &s
+		}
+
+		resp.Tasks[i] = taskResponse{
+			ID:          t.ID.String(),
+			Title:       t.Title,
+			Description: stringOrNil(t.Description),
+			Status:      string(t.Status),
+			Priority:    string(t.Priority),
+			ProjectID:   t.ProjectID.String(),
+			AssigneeID:  assigneeIDStr,
+			DueDate:     dueDateStr,
+			CreatedAt:   t.CreatedAt.Format("2006-01-02T15:04:05Z"),
+			UpdatedAt:   t.UpdatedAt.Format("2006-01-02T15:04:05Z"),
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
 func stringOrNil(s *string) string {
 	if s == nil {
 		return ""
