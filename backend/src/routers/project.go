@@ -14,7 +14,7 @@ func CreateProjectRouter(db *sqlx.DB, cfg utils.Config) *chi.Mux {
 
 	projectStore := &models.ProjectStore{DB: db}
 	taskStore := &models.TaskStore{DB: db}
-	projectHandler := handlers.ProjectHandler{Store: projectStore}
+	projectHandler := handlers.ProjectHandler{Store: projectStore, TaskStore: taskStore}
 	taskHandler := handlers.TaskHandler{TaskStore: taskStore, ProjectStore: projectStore}
 
 	r.Use(middleware.AuthMiddleware(cfg.JwtSecret))
