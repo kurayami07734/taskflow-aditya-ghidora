@@ -24,7 +24,7 @@ func (c Config) getDbUrl() string {
 }
 
 func LoadConfig() Config {
-	// NOTE: Error is ignored because the .env file will notexist inside the container
+	// NOTE: Error is ignored because the .env file will not exist inside the container
 	_ = godotenv.Load()
 
 	var cfg Config

@@ -10,26 +10,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jmoiron/sqlx"
+	"github.com/kurayami07734/taskflow-aditya-ghidora/src/routers"
 	_ "github.com/lib/pq"
 )
 
-func CreateBaseRouter() *chi.Mux {
-	r := chi.NewRouter()
-
-	r.Use(middleware.Logger)
-	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
-
-	return r
-}
-
 func main() {
 	cfg := LoadConfig()
-	router := CreateBaseRouter()
+	router := routers.CreateBaseRouter()
 
 	log.Printf("Connecting to %s database at %s:%d...", cfg.DbName, cfg.DbHost, cfg.DbPort)
 	db, err := sqlx.Connect("postgres", cfg.getDbUrl())
