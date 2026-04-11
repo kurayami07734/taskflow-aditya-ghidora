@@ -7,6 +7,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 func CreateBaseRouter() *chi.Mux {
@@ -23,6 +25,15 @@ func CreateBaseRouter() *chi.Mux {
 func main() {
 	cfg := LoadConfig()
 	r := CreateBaseRouter()
+
+	log.Printf("Connecting to %s database at %s:%d...", cfg.DbName, cfg.DbHost, cfg.DbPort)
+	db, err := sqlx.Connect("postgres", cfg.getDbUrl())
+
+	if err != nil {
+		log.Fatalf("Failed to connect to database :%v", err)
+	}
+
+	defer db.Close()
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
 	log.Printf("Starting server on %d...", cfg.Port)
