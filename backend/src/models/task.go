@@ -77,6 +77,33 @@ func (s *TaskStore) GetByProjectID(projectID uuid.UUID) ([]Task, error) {
 	return tasks, nil
 }
 
+func (s *TaskStore) GetByProjectIDWithFilters(projectID uuid.UUID, status *TaskStatus, assigneeID *uuid.UUID) ([]Task, error) {
+	var tasks []Task
+	query := `SELECT id, title, description, status, priority, project_id, assignee_id, due_date, created_at, updated_at FROM tasks WHERE project_id = $1`
+	args := []interface{}{projectID}
+
+	if status != nil {
+		query += ` AND status = $2`
+		args = append(args, *status)
+		if assigneeID != nil {
+			query += ` AND assignee_id = $3`
+			args = append(args, *assigneeID)
+		}
+	} else if assigneeID != nil {
+		query += ` AND assignee_id = $2`
+		args = append(args, *assigneeID)
+	}
+
+	query += ` ORDER BY created_at DESC`
+
+	err := s.DB.Select(&tasks, query, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	return tasks, nil
+}
+
 func (s *TaskStore) Update(id uuid.UUID, title, description *string, status *TaskStatus, priority *TaskPriority, assigneeID *uuid.UUID, dueDate *time.Time) (*Task, error) {
 	var t Task
 
