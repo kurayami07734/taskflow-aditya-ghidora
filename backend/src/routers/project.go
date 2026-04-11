@@ -20,6 +20,7 @@ func CreateProjectRouter(db *sqlx.DB, cfg utils.Config) *chi.Mux {
 	r.Post("/", projectHandler.CreateProject)
 	r.Get("/{id}", projectHandler.GetProject)
 	r.Patch("/{id}", projectHandler.UpdateProject)
+	r.Delete("/{id}", projectHandler.DeleteProject)
 
 	return r
 }

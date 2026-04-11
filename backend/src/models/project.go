@@ -63,6 +63,12 @@ func (s *ProjectStore) Update(id uuid.UUID, name, description string) (*Project,
 	return &p, nil
 }
 
+func (s *ProjectStore) Delete(id uuid.UUID) error {
+	query := `DELETE FROM projects WHERE id = $1`
+	_, err := s.DB.Exec(query, id)
+	return err
+}
+
 func (s *ProjectStore) GetByOwnerID(ownerID uuid.UUID) ([]Project, error) {
 	var projects []Project
 	query := `SELECT id, name, description, owner_id, created_at FROM projects WHERE owner_id = $1 ORDER BY created_at DESC`
