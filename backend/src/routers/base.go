@@ -23,5 +23,8 @@ func CreateBaseRouter(db *sqlx.DB, cfg utils.Config) *chi.Mux {
 	projectR := CreateProjectRouter(db, cfg)
 	r.Mount("/projects", projectR)
 
+	taskR := CreateTaskRouter(db, cfg)
+	r.Mount("/tasks", taskR)
+
 	return r
 }
