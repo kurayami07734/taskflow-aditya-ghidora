@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"reflect"
 	"time"
@@ -116,6 +117,7 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 
 	task, err := h.TaskStore.Create(req.Title, req.Description, projectID, models.StatusTodo, models.TaskPriority(priority), assigneeID, dueDate)
 	if err != nil {
+		slog.Error("Failed to create task", "error", err, "project_id", projectID)
 		utils.WriteError(w, http.StatusInternalServerError, "failed to create task")
 		return
 	}

@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -31,6 +32,7 @@ func AuthMiddleware(jwtSecret string) func(http.Handler) http.Handler {
 			token := parts[1]
 			claims, err := utils.VerifyToken(token, jwtSecret)
 			if err != nil {
+				slog.Warn("Invalid token", "error", err, "path", r.URL.Path)
 				utils.WriteError(w, http.StatusUnauthorized, "invalid token")
 				return
 			}
