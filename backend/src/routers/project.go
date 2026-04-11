@@ -18,6 +18,7 @@ func CreateProjectRouter(db *sqlx.DB, cfg utils.Config) *chi.Mux {
 	r.Use(middleware.AuthMiddleware(cfg.JwtSecret))
 	r.Get("/", projectHandler.ListProjects)
 	r.Post("/", projectHandler.CreateProject)
+	r.Get("/{id}", projectHandler.GetProject)
 
 	return r
 }
