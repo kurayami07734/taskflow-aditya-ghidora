@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/caarlos0/env/v10"
@@ -8,7 +9,18 @@ import (
 )
 
 type Config struct {
-	Port int `env:"PORT" envDefault:"8080"`
+	Port       int    `env:"PORT" envDefault:"8080"`
+	DbPort     int    `env:"DB_PORT" envDefault:"5432"`
+	DbName     string `env:"DB_NAME"`
+	DbHost     string `env:"DB_HOST"`
+	DbUser     string `env:"DB_USER"`
+	DbPassword string `env:"DB_PASSWORD"`
+	DbSslMode  string `env:"DB_SSL_MODE"`
+}
+
+func (c Config) getDbUrl() string {
+	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
+		c.DbUser, c.DbPassword, c.DbHost, c.DbPort, c.DbName, c.DbSslMode)
 }
 
 func LoadConfig() Config {
