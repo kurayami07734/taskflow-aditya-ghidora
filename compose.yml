@@ -53,5 +53,13 @@ services:
       sh -c "psql -h db -U ${DB_USER} -d ${DB_NAME} -f /seeds/001_seed_data.sql"
     restart: "no"
 
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+
 volumes:
   postgres_data:
