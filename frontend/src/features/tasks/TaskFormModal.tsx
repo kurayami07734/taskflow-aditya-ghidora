@@ -14,6 +14,7 @@ import {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { taskApi } from '../../api';
 import type { Task } from '../../api/types';
+import { useSnackbar } from '../../components/common/SnackbarProvider';
 
 interface TaskFormData {
   title: string;
@@ -32,6 +33,7 @@ interface TaskFormModalProps {
 
 const TaskFormModal = ({ open, onClose, projectId, task }: TaskFormModalProps) => {
   const queryClient = useQueryClient();
+  const { showError, showSuccess } = useSnackbar();
   const [formData, setFormData] = useState<TaskFormData>({
     title: '',
     description: '',
@@ -70,6 +72,11 @@ const TaskFormModal = ({ open, onClose, projectId, task }: TaskFormModalProps) =
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
       onClose();
+      showSuccess(isEditing ? 'Task updated successfully' : 'Task created successfully');
+    },
+    onError: (err: unknown) => {
+      const axiosError = err as { response?: { data?: { message?: string } } };
+      showError(axiosError.response?.data?.message || 'Failed to save task');
     },
   });
 

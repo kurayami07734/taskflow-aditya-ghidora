@@ -7,21 +7,20 @@ import {
   Button,
   Typography,
   Link,
-  Alert,
 } from '@mui/material';
 import { authApi } from '../api';
 import { useAuthStore } from '../stores/authStore';
+import { useSnackbar } from '../components/common/SnackbarProvider';
 
 const Register = () => {
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const { showError } = useSnackbar();
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
 
     try {
@@ -30,7 +29,7 @@ const Register = () => {
       navigate('/projects');
     } catch (err: unknown) {
       const axiosError = err as { response?: { data?: { message?: string } } };
-      setError(axiosError.response?.data?.message || 'Registration failed');
+      showError(axiosError.response?.data?.message || 'Registration failed');
     } finally {
       setLoading(false);
     }
@@ -50,8 +49,6 @@ const Register = () => {
         <Typography variant="h5" component="h1" gutterBottom>
           Register
         </Typography>
-        
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         
         <form onSubmit={handleSubmit}>
           <TextField

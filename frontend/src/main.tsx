@@ -7,6 +7,7 @@ import CssBaseline from '@mui/material/CssBaseline'
 import App from './App'
 import theme from './theme/theme'
 import { useAuthStore } from './stores/authStore'
+import { SnackbarProvider } from './components/common/SnackbarProvider'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,11 +28,13 @@ createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <InitializeAuth>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
-        </InitializeAuth>
+        <SnackbarProvider>
+          <InitializeAuth>
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
+          </InitializeAuth>
+        </SnackbarProvider>
       </ThemeProvider>
     </QueryClientProvider>
   </StrictMode>,

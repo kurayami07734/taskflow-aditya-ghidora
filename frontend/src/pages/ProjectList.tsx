@@ -5,15 +5,16 @@ import {
   Box,
   Button,
   CircularProgress,
-  Alert,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { projectApi } from '../api';
 import ProjectCard from '../features/projects/ProjectCard';
 import CreateProjectModal from '../features/projects/CreateProjectModal';
+import { useSnackbar } from '../components/common/SnackbarProvider';
 
 const ProjectList = () => {
   const [modalOpen, setModalOpen] = useState(false);
+  const { showError } = useSnackbar();
 
   const { data: response, isLoading, isError, error } = useQuery({
     queryKey: ['projects'],
@@ -23,6 +24,10 @@ const ProjectList = () => {
     },
   });
 
+  if (isError) {
+    showError(`Failed to load projects: ${(error as Error).message}`);
+  }
+
   const projects = response?.projects || [];
 
   if (isLoading) {
@@ -30,14 +35,6 @@ const ProjectList = () => {
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
         <CircularProgress />
       </Box>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Alert severity="error" sx={{ mt: 2 }}>
-        Failed to load projects: {(error as Error).message}
-      </Alert>
     );
   }
 
