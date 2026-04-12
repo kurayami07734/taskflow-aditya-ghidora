@@ -135,7 +135,10 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		if *req.DueDate == "" {
 			dueDate = nil
 		} else {
-			parsed, err := time.Parse("2006-01-02", *req.DueDate)
+			parsed, err := time.Parse(time.RFC3339, *req.DueDate)
+			if err != nil {
+				parsed, err = time.Parse("2006-01-02", *req.DueDate)
+			}
 			if err == nil {
 				dueDate = &parsed
 			}

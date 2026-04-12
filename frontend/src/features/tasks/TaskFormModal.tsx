@@ -58,12 +58,12 @@ const TaskFormModal = ({ open, onClose, projectId, task }: TaskFormModalProps) =
         status: task.status,
         priority: task.priority,
         due_date: task.due_date,
-        assignee_id: task.assignee,
+        assignee_id: task.assignee_id,
       });
       setDueDate(task.due_date ? dayjs(task.due_date) : null);
       
-      if (task.assignee) {
-        userApi.get(task.assignee).then(({ data }) => setAssignee(data)).catch(() => setAssignee(null));
+      if (task.assignee_id) {
+        userApi.get(task.assignee_id).then(({ data }) => setAssignee(data)).catch(() => setAssignee(null));
       } else {
         setAssignee(null);
       }
