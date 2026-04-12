@@ -26,7 +26,8 @@ const ProjectDetail = () => {
   const { showError, showSuccess } = useSnackbar();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [deleteTask, setDeleteTask] = useState<Task | null>(null);
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+  const [showProjectDelete, setShowProjectDelete] = useState(false);
 
   const { data: project, isLoading: projectLoading, isError: projectError } = useQuery({
     queryKey: ['project', id],
@@ -57,13 +58,34 @@ const ProjectDetail = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', id] });
       showSuccess('Task deleted successfully');
-      setDeleteTask(null);
     },
     onError: (err: unknown) => {
       const axiosError = err as { response?: { data?: { message?: string } } };
       showError(axiosError.response?.data?.message || 'Failed to delete task');
     },
   });
+
+  const deleteProjectMutation = useMutation({
+    mutationFn: () => projectApi.delete(id!),
+    onSuccess: () => {
+      showSuccess('Project deleted successfully');
+      navigate('/projects');
+    },
+    onError: (err: unknown) => {
+      const axiosError = err as { response?: { data?: { message?: string } } };
+      showError(axiosError.response?.data?.message || 'Failed to delete project');
+    },
+  });
+
+  const handleConfirmDelete = () => {
+    if (taskToDelete) {
+      deleteTaskMutation.mutate(taskToDelete.id);
+      setTaskToDelete(null);
+    } else if (showProjectDelete) {
+      deleteProjectMutation.mutate();
+      setShowProjectDelete(false);
+    }
+  };
 
   if (projectLoading || tasksLoading) {
     return (
@@ -117,7 +139,7 @@ const ProjectDetail = () => {
             variant="outlined"
             color="error"
             startIcon={<DeleteIcon />}
-            onClick={() => setDeleteTask({ id: '', title: '', description: null, status: 'todo', priority: 'medium', project_id: id!, assignee: null, due_date: null, created_at: '', updated_at: '' } as Task)}
+            onClick={() => setShowProjectDelete(true)}
           >
             Delete Project
           </Button>
@@ -145,7 +167,7 @@ const ProjectDetail = () => {
             setEditingTask(task);
             setModalOpen(true);
           }}
-          onDeleteTask={(task) => setDeleteTask(task)}
+          onDeleteTask={(task) => setTaskToDelete(task)}
         />
       ) : (
         <Box sx={{ textAlign: 'center', mt: 4 }}>
@@ -169,27 +191,18 @@ const ProjectDetail = () => {
       />
 
       <ConfirmDialog
-        open={!!deleteTask}
-        title={deleteTask?.title ? 'Delete Task' : 'Delete Project'}
+        open={!!taskToDelete || showProjectDelete}
+        title={taskToDelete ? 'Delete Task' : 'Delete Project'}
         message={
-          deleteTask?.title
-            ? `Are you sure you want to delete the task "${deleteTask.title}"?`
+          taskToDelete
+            ? `Are you sure you want to delete the task "${taskToDelete.title}"?`
             : `Are you sure you want to delete the project "${project.name}"? This will also delete all tasks in this project.`
         }
-        onConfirm={() => {
-          if (deleteTask?.title) {
-            deleteTaskMutation.mutate(deleteTask.id);
-          } else {
-            projectApi.delete(id!).then(() => {
-              showSuccess('Project deleted successfully');
-              navigate('/projects');
-            }).catch((err) => {
-              const axiosError = err as { response?: { data?: { message?: string } } };
-              showError(axiosError.response?.data?.message || 'Failed to delete project');
-            });
-          }
+        onConfirm={handleConfirmDelete}
+        onCancel={() => {
+          setTaskToDelete(null);
+          setShowProjectDelete(false);
         }}
-        onCancel={() => setDeleteTask(null)}
       />
     </Box>
   );
