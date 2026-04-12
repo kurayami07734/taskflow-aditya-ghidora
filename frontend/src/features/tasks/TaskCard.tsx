@@ -5,7 +5,7 @@ import type { Task } from '../../api/types';
 interface TaskCardProps {
   task: Task;
   onEdit: (task: Task) => void;
-  onDelete: (taskId: string) => void;
+  onDelete: (task: Task) => void;
 }
 
 const priorityLabels = {
@@ -45,7 +45,7 @@ const TaskCard = ({ task, onEdit, onDelete }: TaskCardProps) => {
             size="small" 
             onClick={(e) => {
               e.stopPropagation();
-              onDelete(task.id);
+              onDelete(task);
             }}
           >
             <DeleteIcon fontSize="small" />
