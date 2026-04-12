@@ -82,6 +82,9 @@ func TestProjectsIntegration(t *testing.T) {
 		if resp["projects"] == nil {
 			t.Error("Expected projects in response")
 		}
+		if resp["pagination"] == nil {
+			t.Error("Expected pagination in response")
+		}
 	})
 
 	t.Run("authenticated request returns empty projects list", func(t *testing.T) {
@@ -98,6 +101,43 @@ func TestProjectsIntegration(t *testing.T) {
 		projects := resp["projects"].([]interface{})
 		if len(projects) != 0 {
 			t.Errorf("Expected empty projects list, got %d", len(projects))
+		}
+	})
+
+	t.Run("authenticated request with pagination returns correct data", func(t *testing.T) {
+		token := registerAndLogin("projects4@example.com", "secret123")
+
+		for i := 0; i < 5; i++ {
+			body := map[string]string{
+				"name":        "Project " + string(rune('1'+i)),
+				"description": "Description",
+			}
+			bodyBytes, _ := json.Marshal(body)
+			req, _ := http.NewRequest("POST", "/projects", bytes.NewReader(bodyBytes))
+			req.Header.Set("Authorization", "Bearer "+token)
+			req.Header.Set("Content-Type", "application/json")
+			rr := httptest.NewRecorder()
+			router.ServeHTTP(rr, req)
+		}
+
+		req, _ := http.NewRequest("GET", "/projects?page=1&limit=3", nil)
+		req.Header.Set("Authorization", "Bearer "+token)
+		rr := httptest.NewRecorder()
+
+		router.ServeHTTP(rr, req)
+
+		var resp map[string]interface{}
+		json.Unmarshal(rr.Body.Bytes(), &resp)
+		projects := resp["projects"].([]interface{})
+		if len(projects) != 3 {
+			t.Errorf("Expected 3 projects (limit), got %d", len(projects))
+		}
+		pagination := resp["pagination"].(map[string]interface{})
+		if pagination["total"].(float64) != 5 {
+			t.Errorf("Expected total 5, got %v", pagination["total"])
+		}
+		if pagination["total_pages"].(float64) != 2 {
+			t.Errorf("Expected total_pages 2, got %v", pagination["total_pages"])
 		}
 	})
 

@@ -83,6 +83,16 @@ func TestGetProjectIntegration(t *testing.T) {
 		return resp["id"].(string)
 	}
 
+	createTask := func(token, projectID, title string) {
+		body := map[string]interface{}{"title": title}
+		bodyBytes, _ := json.Marshal(body)
+		req, _ := http.NewRequest("POST", "/projects/"+projectID+"/tasks", bytes.NewReader(bodyBytes))
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Content-Type", "application/json")
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, req)
+	}
+
 	t.Run("get existing project returns 200", func(t *testing.T) {
 		token := registerAndLogin("getproj1@example.com", "secret123")
 		projectID := createProject(token, "Test Project", "Test description")
@@ -104,6 +114,42 @@ func TestGetProjectIntegration(t *testing.T) {
 		}
 		if resp["name"] != "Test Project" {
 			t.Errorf("Expected name Test Project, got %s", resp["name"])
+		}
+		if resp["pagination"] == nil {
+			t.Error("Expected pagination in response")
+		}
+	})
+
+	t.Run("get project with pagination returns correct data", func(t *testing.T) {
+		token := registerAndLogin("getproj5@example.com", "secret123")
+		projectID := createProject(token, "Test Project", "Test description")
+
+		for i := 0; i < 5; i++ {
+			createTask(token, projectID, "Task "+string(rune('1'+i)))
+		}
+
+		req, _ := http.NewRequest("GET", "/projects/"+projectID+"?page=1&limit=3", nil)
+		req.Header.Set("Authorization", "Bearer "+token)
+		rr := httptest.NewRecorder()
+
+		router.ServeHTTP(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Errorf("Expected status 200, got %d", rr.Code)
+		}
+
+		var resp map[string]interface{}
+		json.Unmarshal(rr.Body.Bytes(), &resp)
+		tasks := resp["tasks"].([]interface{})
+		if len(tasks) != 3 {
+			t.Errorf("Expected 3 tasks (limit), got %d", len(tasks))
+		}
+		pagination := resp["pagination"].(map[string]interface{})
+		if pagination["total"].(float64) != 5 {
+			t.Errorf("Expected total 5, got %v", pagination["total"])
+		}
+		if pagination["total_pages"].(float64) != 2 {
+			t.Errorf("Expected total_pages 2, got %v", pagination["total_pages"])
 		}
 	})
 

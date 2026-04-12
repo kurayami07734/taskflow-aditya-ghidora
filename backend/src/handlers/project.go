@@ -20,16 +20,18 @@ type ProjectHandler struct {
 }
 
 type projectResponse struct {
-	ID          string         `json:"id"`
-	Name        string         `json:"name"`
-	Description string         `json:"description"`
-	OwnerID     string         `json:"owner_id"`
-	CreatedAt   string         `json:"created_at"`
-	Tasks       []taskResponse `json:"tasks"`
+	ID          string            `json:"id"`
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	OwnerID     string            `json:"owner_id"`
+	CreatedAt   string            `json:"created_at"`
+	Tasks       []taskResponse    `json:"tasks"`
+	Pagination  *utils.Pagination `json:"pagination,omitempty"`
 }
 
 type listProjectsResponse struct {
-	Projects []projectResponse `json:"projects"`
+	Projects   []projectResponse `json:"projects"`
+	Pagination utils.Pagination  `json:"pagination"`
 }
 
 type createProjectRequest struct {
@@ -49,15 +51,25 @@ func (h *ProjectHandler) ListProjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	projects, err := h.Store.GetByOwnerID(userID)
+	page, limit, offset := utils.GetPagination(r)
+
+	projects, err := h.Store.GetByOwnerIDPaginated(userID, limit, offset)
 	if err != nil {
 		slog.Error("Failed to fetch projects", "error", err, "user_id", userID)
 		utils.WriteError(w, http.StatusInternalServerError, "failed to fetch projects")
 		return
 	}
 
+	total, err := h.Store.CountByOwnerID(userID)
+	if err != nil {
+		slog.Error("Failed to count projects", "error", err, "user_id", userID)
+		utils.WriteError(w, http.StatusInternalServerError, "failed to fetch projects")
+		return
+	}
+
 	resp := listProjectsResponse{
-		Projects: make([]projectResponse, len(projects)),
+		Projects:   make([]projectResponse, len(projects)),
+		Pagination: utils.CalculatePagination(page, limit, total),
 	}
 
 	for i, p := range projects {
@@ -150,9 +162,18 @@ func (h *ProjectHandler) GetProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tasks, err := h.TaskStore.GetByProjectID(projectID)
+	page, limit, offset := utils.GetPagination(r)
+
+	tasks, err := h.TaskStore.GetByProjectIDPaginated(projectID, nil, nil, limit, offset)
 	if err != nil {
 		slog.Error("Failed to fetch tasks for project", "error", err, "project_id", projectID)
+		utils.WriteError(w, http.StatusInternalServerError, "failed to fetch tasks")
+		return
+	}
+
+	total, err := h.TaskStore.CountByProjectID(projectID, nil, nil)
+	if err != nil {
+		slog.Error("Failed to count tasks for project", "error", err, "project_id", projectID)
 		utils.WriteError(w, http.StatusInternalServerError, "failed to fetch tasks")
 		return
 	}
@@ -184,6 +205,7 @@ func (h *ProjectHandler) GetProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	pagination := utils.CalculatePagination(page, limit, total)
 	json.NewEncoder(w).Encode(projectResponse{
 		ID:          project.ID.String(),
 		Name:        project.Name,
@@ -191,6 +213,7 @@ func (h *ProjectHandler) GetProject(w http.ResponseWriter, r *http.Request) {
 		OwnerID:     project.OwnerID.String(),
 		CreatedAt:   project.CreatedAt.Format("2006-01-02T15:04:05Z"),
 		Tasks:       taskResponses,
+		Pagination:  &pagination,
 	})
 }
 

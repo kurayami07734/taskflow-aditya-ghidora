@@ -80,3 +80,27 @@ func (s *ProjectStore) GetByOwnerID(ownerID uuid.UUID) ([]Project, error) {
 
 	return projects, nil
 }
+
+func (s *ProjectStore) GetByOwnerIDPaginated(ownerID uuid.UUID, limit, offset int) ([]Project, error) {
+	var projects []Project
+	query := `SELECT id, name, description, owner_id, created_at FROM projects WHERE owner_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`
+
+	err := s.DB.Select(&projects, query, ownerID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	return projects, nil
+}
+
+func (s *ProjectStore) CountByOwnerID(ownerID uuid.UUID) (int, error) {
+	var count int
+	query := `SELECT COUNT(*) FROM projects WHERE owner_id = $1`
+
+	err := s.DB.Get(&count, query, ownerID)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
