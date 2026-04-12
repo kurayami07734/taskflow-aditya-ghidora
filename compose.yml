@@ -9,8 +9,8 @@ services:
     volumes:
       - ./backend/logs:/app/logs
     depends_on:
-      migrate:
-        condition: service_completed_successfully
+      - migrate
+      - seed
 
   db:
     image: postgres:15-alpine
@@ -39,6 +39,19 @@ services:
       - -path=/migrations/
       - -database=postgres://${DB_USER}:${DB_PASSWORD}@db:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSL_MODE}
       - up
+
+  seed:
+    image: postgres:15-alpine
+    volumes:
+      - ./backend/seeds:/seeds
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      PGPASSWORD: ${DB_PASSWORD}
+    command: >
+      sh -c "psql -h db -U ${DB_USER} -d ${DB_NAME} -f /seeds/001_seed_data.sql"
+    restart: "no"
 
 volumes:
   postgres_data:
