@@ -173,6 +173,7 @@ const TaskFormModal = ({ open, onClose, projectId, task }: TaskFormModalProps) =
               label="Due Date"
               value={dueDate}
               onChange={(newValue) => setDueDate(newValue)}
+              format="DD/MM/YYYY"
               slotProps={{
                 textField: {
                   fullWidth: true,

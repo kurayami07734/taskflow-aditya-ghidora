@@ -83,7 +83,7 @@ const TaskCard = ({ task, onEdit, onDelete }: TaskCardProps) => {
         
         {task.due_date && (
           <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-            Due: {new Date(task.due_date).toLocaleDateString()}
+            Due: {new Date(task.due_date).toLocaleDateString('en-GB')}
           </Typography>
         )}
       </CardContent>
