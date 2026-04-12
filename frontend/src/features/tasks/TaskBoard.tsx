@@ -5,7 +5,7 @@ import TaskCard from './TaskCard';
 interface TaskBoardProps {
   tasks: Task[];
   onEditTask: (task: Task) => void;
-  onDeleteTask: (taskId: string) => void;
+  onDeleteTask: (task: Task) => void;
 }
 
 interface Column {

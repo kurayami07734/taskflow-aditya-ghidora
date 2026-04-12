@@ -11,9 +11,11 @@ import {
   Link,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { projectApi, taskApi } from '../api';
 import TaskBoard from '../features/tasks/TaskBoard';
 import TaskFormModal from '../features/tasks/TaskFormModal';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 import type { Task } from '../api/types';
 import { useSnackbar } from '../components/common/SnackbarProvider';
 
@@ -21,9 +23,10 @@ const ProjectDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { showError } = useSnackbar();
+  const { showError, showSuccess } = useSnackbar();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [deleteTask, setDeleteTask] = useState<Task | null>(null);
 
   const { data: project, isLoading: projectLoading, isError: projectError } = useQuery({
     queryKey: ['project', id],
@@ -53,6 +56,8 @@ const ProjectDetail = () => {
     mutationFn: taskApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', id] });
+      showSuccess('Task deleted successfully');
+      setDeleteTask(null);
     },
     onError: (err: unknown) => {
       const axiosError = err as { response?: { data?: { message?: string } } };
@@ -107,16 +112,26 @@ const ProjectDetail = () => {
             </Typography>
           )}
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => {
-            setEditingTask(null);
-            setModalOpen(true);
-          }}
-        >
-          Add Task
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<DeleteIcon />}
+            onClick={() => setDeleteTask({ id: '', title: '', description: null, status: 'todo', priority: 'medium', project_id: id!, assignee: null, due_date: null, created_at: '', updated_at: '' } as Task)}
+          >
+            Delete Project
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => {
+              setEditingTask(null);
+              setModalOpen(true);
+            }}
+          >
+            Add Task
+          </Button>
+        </Box>
       </Box>
 
       {tasksError ? (
@@ -130,11 +145,7 @@ const ProjectDetail = () => {
             setEditingTask(task);
             setModalOpen(true);
           }}
-          onDeleteTask={(taskId) => {
-            if (confirm('Are you sure you want to delete this task?')) {
-              deleteTaskMutation.mutate(taskId);
-            }
-          }}
+          onDeleteTask={(task) => setDeleteTask(task)}
         />
       ) : (
         <Box sx={{ textAlign: 'center', mt: 4 }}>
@@ -155,6 +166,30 @@ const ProjectDetail = () => {
         }}
         projectId={id!}
         task={editingTask}
+      />
+
+      <ConfirmDialog
+        open={!!deleteTask}
+        title={deleteTask?.title ? 'Delete Task' : 'Delete Project'}
+        message={
+          deleteTask?.title
+            ? `Are you sure you want to delete the task "${deleteTask.title}"?`
+            : `Are you sure you want to delete the project "${project.name}"? This will also delete all tasks in this project.`
+        }
+        onConfirm={() => {
+          if (deleteTask?.title) {
+            deleteTaskMutation.mutate(deleteTask.id);
+          } else {
+            projectApi.delete(id!).then(() => {
+              showSuccess('Project deleted successfully');
+              navigate('/projects');
+            }).catch((err) => {
+              const axiosError = err as { response?: { data?: { message?: string } } };
+              showError(axiosError.response?.data?.message || 'Failed to delete project');
+            });
+          }
+        }}
+        onCancel={() => setDeleteTask(null)}
       />
     </Box>
   );
