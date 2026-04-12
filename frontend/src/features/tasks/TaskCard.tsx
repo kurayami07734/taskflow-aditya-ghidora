@@ -8,6 +8,12 @@ interface TaskCardProps {
   onDelete: (taskId: string) => void;
 }
 
+const priorityLabels = {
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
+};
+
 const priorityColors = {
   low: 'success',
   medium: 'warning',
@@ -15,7 +21,7 @@ const priorityColors = {
 } as const;
 
 const statusLabels = {
-  todo: 'To Do',
+  todo: 'TODO',
   in_progress: 'In Progress',
   done: 'Done',
 };
@@ -69,7 +75,7 @@ const TaskCard = ({ task, onEdit, onDelete }: TaskCardProps) => {
             variant="outlined"
           />
           <Chip 
-            label={task.priority} 
+            label={priorityLabels[task.priority]} 
             size="small" 
             color={priorityColors[task.priority]}
           />
