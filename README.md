@@ -61,7 +61,7 @@ cp .env.example .env
 
 # Start the application
 docker compose up
-# API available at http://localhost:5000 (default port)
+# API available at http://localhost:8080 (default port)
 ```
 
 The first run will execute migrations and seed data automatically.
@@ -83,7 +83,7 @@ The database is seeded with a test user:
 
 ## 6. API Reference
 
-Full API documentation (swagger) is available at http://localhost:5000/docs/
+Full API documentation (swagger) is available at http://localhost:8080/docs/
 
 ## 7. What You'd Do With More Time
 
