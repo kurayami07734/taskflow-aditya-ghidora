@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -102,6 +103,65 @@ func (s *TaskStore) GetByProjectIDWithFilters(projectID uuid.UUID, status *TaskS
 	}
 
 	return tasks, nil
+}
+
+func (s *TaskStore) GetByProjectIDPaginated(projectID uuid.UUID, status *TaskStatus, assigneeID *uuid.UUID, limit, offset int) ([]Task, error) {
+	var tasks []Task
+	query := `SELECT id, title, description, status, priority, project_id, assignee_id, due_date, created_at, updated_at FROM tasks WHERE project_id = $1`
+	args := []interface{}{projectID}
+	argIndex := 2
+
+	if status != nil {
+		query += fmt.Sprintf(` AND status = $%d`, argIndex)
+		args = append(args, *status)
+		argIndex++
+		if assigneeID != nil {
+			query += fmt.Sprintf(` AND assignee_id = $%d`, argIndex)
+			args = append(args, *assigneeID)
+			argIndex++
+		}
+	} else if assigneeID != nil {
+		query += fmt.Sprintf(` AND assignee_id = $%d`, argIndex)
+		args = append(args, *assigneeID)
+		argIndex++
+	}
+
+	query += fmt.Sprintf(` ORDER BY created_at DESC LIMIT $%d OFFSET $%d`, argIndex, argIndex+1)
+	args = append(args, limit, offset)
+
+	err := s.DB.Select(&tasks, query, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	return tasks, nil
+}
+
+func (s *TaskStore) CountByProjectID(projectID uuid.UUID, status *TaskStatus, assigneeID *uuid.UUID) (int, error) {
+	var count int
+	query := `SELECT COUNT(*) FROM tasks WHERE project_id = $1`
+	args := []interface{}{projectID}
+	argIndex := 2
+
+	if status != nil {
+		query += fmt.Sprintf(` AND status = $%d`, argIndex)
+		args = append(args, *status)
+		argIndex++
+		if assigneeID != nil {
+			query += fmt.Sprintf(` AND assignee_id = $%d`, argIndex)
+			args = append(args, *assigneeID)
+		}
+	} else if assigneeID != nil {
+		query += fmt.Sprintf(` AND assignee_id = $%d`, argIndex)
+		args = append(args, *assigneeID)
+	}
+
+	err := s.DB.Get(&count, query, args...)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }
 
 func (s *TaskStore) Update(id uuid.UUID, title, description *string, status *TaskStatus, priority *TaskPriority, assigneeID *uuid.UUID, dueDate *time.Time) (*Task, error) {

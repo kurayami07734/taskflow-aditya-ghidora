@@ -126,6 +126,9 @@ func TestListTasksIntegration(t *testing.T) {
 		if len(tasks) != 2 {
 			t.Errorf("Expected 2 tasks, got %d", len(tasks))
 		}
+		if resp["pagination"] == nil {
+			t.Error("Expected pagination in response")
+		}
 	})
 
 	t.Run("list tasks with status filter returns 200", func(t *testing.T) {
@@ -149,6 +152,38 @@ func TestListTasksIntegration(t *testing.T) {
 		tasks := resp["tasks"].([]interface{})
 		if len(tasks) != 2 {
 			t.Errorf("Expected 2 tasks, got %d", len(tasks))
+		}
+	})
+
+	t.Run("list tasks with pagination returns correct data", func(t *testing.T) {
+		token := registerAndLogin("listtasks5@example.com", "secret123")
+		projectID := createProject(token, "Project", "Description")
+		createTask(token, projectID, "Task 1", "todo")
+		createTask(token, projectID, "Task 2", "todo")
+		createTask(token, projectID, "Task 3", "todo")
+
+		req, _ := http.NewRequest("GET", "/projects/"+projectID+"/tasks?page=1&limit=2", nil)
+		req.Header.Set("Authorization", "Bearer "+token)
+		rr := httptest.NewRecorder()
+
+		router.ServeHTTP(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Errorf("Expected status 200, got %d", rr.Code)
+		}
+
+		var resp map[string]interface{}
+		json.Unmarshal(rr.Body.Bytes(), &resp)
+		tasks := resp["tasks"].([]interface{})
+		if len(tasks) != 2 {
+			t.Errorf("Expected 2 tasks (limit), got %d", len(tasks))
+		}
+		pagination := resp["pagination"].(map[string]interface{})
+		if pagination["total"].(float64) != 3 {
+			t.Errorf("Expected total 3, got %v", pagination["total"])
+		}
+		if pagination["total_pages"].(float64) != 2 {
+			t.Errorf("Expected total_pages 2, got %v", pagination["total_pages"])
 		}
 	})
 

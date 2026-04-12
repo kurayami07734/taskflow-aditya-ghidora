@@ -149,7 +149,8 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 }
 
 type listTasksResponse struct {
-	Tasks []taskResponse `json:"tasks"`
+	Tasks      []taskResponse   `json:"tasks"`
+	Pagination utils.Pagination `json:"pagination"`
 }
 
 func (h *TaskHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
@@ -177,6 +178,8 @@ func (h *TaskHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	page, limit, offset := utils.GetPagination(r)
+
 	statusFilter := r.URL.Query().Get("status")
 	assigneeFilter := r.URL.Query().Get("assignee")
 
@@ -194,14 +197,23 @@ func (h *TaskHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	tasks, err := h.TaskStore.GetByProjectIDWithFilters(projectID, status, assigneeID)
+	tasks, err := h.TaskStore.GetByProjectIDPaginated(projectID, status, assigneeID, limit, offset)
 	if err != nil {
+		slog.Error("Failed to fetch tasks", "error", err, "project_id", projectID)
+		utils.WriteError(w, http.StatusInternalServerError, "failed to fetch tasks")
+		return
+	}
+
+	total, err := h.TaskStore.CountByProjectID(projectID, status, assigneeID)
+	if err != nil {
+		slog.Error("Failed to count tasks", "error", err, "project_id", projectID)
 		utils.WriteError(w, http.StatusInternalServerError, "failed to fetch tasks")
 		return
 	}
 
 	resp := listTasksResponse{
-		Tasks: make([]taskResponse, len(tasks)),
+		Tasks:      make([]taskResponse, len(tasks)),
+		Pagination: utils.CalculatePagination(page, limit, total),
 	}
 
 	for i, t := range tasks {
