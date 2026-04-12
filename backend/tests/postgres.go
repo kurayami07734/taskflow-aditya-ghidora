@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/jmoiron/sqlx"
@@ -29,62 +30,92 @@ type TestDBConfig struct {
 	Name     string
 }
 
+var (
+	sharedContainer *tcpostgres.PostgresContainer
+	sharedDB        *sqlx.DB
+	sharedConfig    TestDBConfig
+	containerOnce   sync.Once
+	containerErr    error
+)
+
 func SetupPostgres(t *testing.T) *TestDB {
 	t.Helper()
 
-	ctx := context.Background()
+	containerOnce.Do(func() {
+		ctx := context.Background()
 
-	pgContainer, err := tcpostgres.Run(ctx,
-		"postgres:15-alpine",
-		tcpostgres.WithDatabase("taskflow_test"),
-		tcpostgres.WithUsername("postgres"),
-		tcpostgres.WithPassword("testpass"),
-		testcontainers.WithWaitStrategy(wait.ForListeningPort("5432/tcp")),
-	)
-	if err != nil {
-		t.Fatalf("failed to start postgres container: %v", err)
+		pgContainer, err := tcpostgres.Run(ctx,
+			"postgres:15-alpine",
+			tcpostgres.WithDatabase("taskflow_test"),
+			tcpostgres.WithUsername("postgres"),
+			tcpostgres.WithPassword("testpass"),
+			testcontainers.WithWaitStrategy(wait.ForListeningPort("5432/tcp")),
+		)
+		if err != nil {
+			containerErr = fmt.Errorf("failed to start postgres container: %v", err)
+			return
+		}
+
+		ip, err := pgContainer.Host(ctx)
+		if err != nil {
+			containerErr = fmt.Errorf("failed to get container host: %v", err)
+			return
+		}
+
+		port, err := pgContainer.MappedPort(ctx, "5432")
+		if err != nil {
+			containerErr = fmt.Errorf("failed to get mapped port: %v", err)
+			return
+		}
+
+		connectionStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
+		if err != nil {
+			containerErr = fmt.Errorf("failed to get connection string: %v", err)
+			return
+		}
+
+		db, err := sqlx.Connect("postgres", connectionStr)
+		if err != nil {
+			containerErr = fmt.Errorf("failed to connect to database: %v", err)
+			return
+		}
+
+		if err := runMigrations(db); err != nil {
+			containerErr = fmt.Errorf("failed to run migrations: %v", err)
+			return
+		}
+
+		sharedContainer = pgContainer
+		sharedDB = db
+		sharedConfig = TestDBConfig{
+			Host:     ip,
+			Port:     int(port.Num()),
+			User:     "postgres",
+			Password: "testpass",
+			Name:     "taskflow_test",
+		}
+	})
+
+	if containerErr != nil {
+		t.Fatalf("failed to setup postgres: %v", containerErr)
 	}
 
-	ip, err := pgContainer.Host(ctx)
-	if err != nil {
-		t.Fatalf("failed to get container host: %v", err)
-	}
-
-	port, err := pgContainer.MappedPort(ctx, "5432")
-	if err != nil {
-		t.Fatalf("failed to get mapped port: %v", err)
-	}
-
-	connectionStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
-	if err != nil {
-		t.Fatalf("failed to get connection string: %v", err)
-	}
-
-	db, err := sqlx.Connect("postgres", connectionStr)
-	if err != nil {
-		t.Fatalf("failed to connect to database: %v", err)
-	}
-
-	if err := runMigrations(db, t); err != nil {
-		t.Fatalf("failed to run migrations: %v", err)
-	}
-
-	cfg := TestDBConfig{
-		Host:     ip,
-		Port:     int(port.Num()),
-		User:     "postgres",
-		Password: "testpass",
-		Name:     "taskflow_test",
+	if err := clearTables(sharedDB); err != nil {
+		t.Fatalf("failed to clear tables: %v", err)
 	}
 
 	return &TestDB{
-		DB:     db,
-		Config: cfg,
-		Close: func() {
-			db.Close()
-			pgContainer.Terminate(context.Background())
-		},
+		DB:     sharedDB,
+		Config: sharedConfig,
+		Close:  func() {},
 	}
+}
+
+func clearTables(db *sqlx.DB) error {
+	_, err := db.Exec(`
+		TRUNCATE TABLE tasks, projects, users RESTART IDENTITY CASCADE;
+	`)
+	return err
 }
 
 func getMigrationsPath() string {
@@ -92,7 +123,7 @@ func getMigrationsPath() string {
 	return filepath.Join(wd, "..", "migrations")
 }
 
-func runMigrations(db *sqlx.DB, t *testing.T) error {
+func runMigrations(db *sqlx.DB) error {
 	migrationsPath := getMigrationsPath()
 	files, err := os.ReadDir(migrationsPath)
 	if err != nil {
