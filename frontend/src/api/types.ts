@@ -11,6 +11,18 @@ export interface Project {
   created_at: string;
 }
 
+export interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  total_pages: number;
+}
+
+export interface ProjectListResponse {
+  projects: Project[];
+  pagination: Pagination;
+}
+
 export interface Task {
   id: string;
   project_id: string;
@@ -22,6 +34,11 @@ export interface Task {
   assignee: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface TaskListResponse {
+  tasks: Task[];
+  pagination: Pagination;
 }
 
 export interface LoginRequest {

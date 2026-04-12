@@ -15,13 +15,15 @@ import CreateProjectModal from '../features/projects/CreateProjectModal';
 const ProjectList = () => {
   const [modalOpen, setModalOpen] = useState(false);
 
-  const { data: projects, isLoading, isError, error } = useQuery({
+  const { data: response, isLoading, isError, error } = useQuery({
     queryKey: ['projects'],
     queryFn: async () => {
       const { data } = await projectApi.list();
       return data;
     },
   });
+
+  const projects = response?.projects || [];
 
   if (isLoading) {
     return (

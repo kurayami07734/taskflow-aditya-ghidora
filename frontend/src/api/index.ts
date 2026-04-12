@@ -4,9 +4,11 @@ import type {
   RegisterRequest,
   AuthResponse,
   Project,
+  ProjectListResponse,
   CreateProjectRequest,
   UpdateProjectRequest,
   Task,
+  TaskListResponse,
   CreateTaskRequest,
   UpdateTaskRequest,
 } from './types';
@@ -20,7 +22,7 @@ export const authApi = {
 };
 
 export const projectApi = {
-  list: () => api.get<Project[]>('/projects'),
+  list: () => api.get<ProjectListResponse>('/projects'),
   
   get: (id: string) => api.get<Project>(`/projects/${id}`),
   
@@ -35,7 +37,7 @@ export const projectApi = {
 
 export const taskApi = {
   listByProject: (projectId: string) =>
-    api.get<Task[]>(`/projects/${projectId}/tasks`),
+    api.get<TaskListResponse>(`/projects/${projectId}/tasks`),
   
   create: (projectId: string, data: CreateTaskRequest) =>
     api.post<Task>(`/projects/${projectId}/tasks`, data),
