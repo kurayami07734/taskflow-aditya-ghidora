@@ -46,3 +46,28 @@ func (s *UserStore) GetByEmail(email string) (*User, error) {
 
 	return &u, nil
 }
+
+func (s *UserStore) GetByID(id uuid.UUID) (*User, error) {
+	var u User
+	query := `SELECT id, name, email, created_at FROM users WHERE id = $1`
+
+	err := s.DB.Get(&u, query, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &u, nil
+}
+
+func (s *UserStore) Search(query string) ([]User, error) {
+	var users []User
+	sqlQuery := `SELECT id, name, email, created_at FROM users WHERE name ILIKE $1 OR email ILIKE $1 LIMIT 20`
+	searchPattern := "%" + query + "%"
+
+	err := s.DB.Select(&users, sqlQuery, searchPattern)
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}

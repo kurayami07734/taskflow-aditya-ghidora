@@ -10,11 +10,15 @@ import {
   Select,
   FormControl,
   InputLabel,
+  Box,
 } from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { taskApi } from '../../api';
-import type { Task } from '../../api/types';
+import dayjs, { Dayjs } from 'dayjs';
+import { taskApi, userApi } from '../../api';
+import type { Task, User } from '../../api/types';
 import { useSnackbar } from '../../components/common/SnackbarProvider';
+import UserSearch from '../../components/common/UserSearch';
 
 interface TaskFormData {
   title: string;
@@ -22,6 +26,7 @@ interface TaskFormData {
   status: Task['status'];
   priority: Task['priority'];
   due_date: string | null;
+  assignee_id: string | null;
 }
 
 interface TaskFormModalProps {
@@ -34,12 +39,15 @@ interface TaskFormModalProps {
 const TaskFormModal = ({ open, onClose, projectId, task }: TaskFormModalProps) => {
   const queryClient = useQueryClient();
   const { showError, showSuccess } = useSnackbar();
+  const [assignee, setAssignee] = useState<User | null>(null);
+  const [dueDate, setDueDate] = useState<Dayjs | null>(null);
   const [formData, setFormData] = useState<TaskFormData>({
     title: '',
     description: '',
     status: 'todo',
     priority: 'medium',
     due_date: null,
+    assignee_id: null,
   });
 
   useEffect(() => {
@@ -50,7 +58,15 @@ const TaskFormModal = ({ open, onClose, projectId, task }: TaskFormModalProps) =
         status: task.status,
         priority: task.priority,
         due_date: task.due_date,
+        assignee_id: task.assignee,
       });
+      setDueDate(task.due_date ? dayjs(task.due_date) : null);
+      
+      if (task.assignee) {
+        userApi.get(task.assignee).then(({ data }) => setAssignee(data)).catch(() => setAssignee(null));
+      } else {
+        setAssignee(null);
+      }
     } else {
       setFormData({
         title: '',
@@ -58,7 +74,10 @@ const TaskFormModal = ({ open, onClose, projectId, task }: TaskFormModalProps) =
         status: 'todo',
         priority: 'medium',
         due_date: null,
+        assignee_id: null,
       });
+      setDueDate(null);
+      setAssignee(null);
     }
   }, [task, open]);
 
@@ -82,7 +101,16 @@ const TaskFormModal = ({ open, onClose, projectId, task }: TaskFormModalProps) =
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    mutation.mutate(formData);
+    const submitData = {
+      ...formData,
+      due_date: dueDate ? dueDate.toISOString() : null,
+    };
+    mutation.mutate(submitData);
+  };
+
+  const handleAssigneeSelect = (user: User | null) => {
+    setAssignee(user);
+    setFormData({ ...formData, assignee_id: user?.id ?? null });
   };
 
   return (
@@ -108,30 +136,51 @@ const TaskFormModal = ({ open, onClose, projectId, task }: TaskFormModalProps) =
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           />
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Status</InputLabel>
-            <Select
-              value={formData.status}
-              label="Status"
-              onChange={(e) => setFormData({ ...formData, status: e.target.value as Task['status'] })}
-            >
-              <MenuItem value="todo">To Do</MenuItem>
-              <MenuItem value="in_progress">In Progress</MenuItem>
-              <MenuItem value="done">Done</MenuItem>
-            </Select>
-          </FormControl>
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Priority</InputLabel>
-            <Select
-              value={formData.priority}
-              label="Priority"
-              onChange={(e) => setFormData({ ...formData, priority: e.target.value as Task['priority'] })}
-            >
-              <MenuItem value="low">Low</MenuItem>
-              <MenuItem value="medium">Medium</MenuItem>
-              <MenuItem value="high">High</MenuItem>
-            </Select>
-          </FormControl>
+          <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={formData.status}
+                label="Status"
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as Task['status'] })}
+              >
+                <MenuItem value="todo">Todo</MenuItem>
+                <MenuItem value="in_progress">In Progress</MenuItem>
+                <MenuItem value="done">Done</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Priority</InputLabel>
+              <Select
+                value={formData.priority}
+                label="Priority"
+                onChange={(e) => setFormData({ ...formData, priority: e.target.value as Task['priority'] })}
+              >
+                <MenuItem value="low">Low</MenuItem>
+                <MenuItem value="medium">Medium</MenuItem>
+                <MenuItem value="high">High</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+          <Box sx={{ mt: 1 }}>
+            <UserSearch
+              selectedUser={assignee}
+              onSelect={handleAssigneeSelect}
+            />
+          </Box>
+          <Box sx={{ mt: 1 }}>
+            <DatePicker
+              label="Due Date"
+              value={dueDate}
+              onChange={(newValue) => setDueDate(newValue)}
+              slotProps={{
+                textField: {
+                  fullWidth: true,
+                  margin: 'normal',
+                },
+              }}
+            />
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={onClose}>Cancel</Button>
