@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useMemo, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Typography,
   Box,
@@ -9,15 +9,15 @@ import {
   Alert,
   Breadcrumbs,
   Link,
-} from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
-import { projectApi, taskApi } from '../api';
-import TaskBoard from '../features/tasks/TaskBoard';
-import TaskFormModal from '../features/tasks/TaskFormModal';
-import ConfirmDialog from '../components/common/ConfirmDialog';
-import type { Task } from '../api/types';
-import { useSnackbar } from '../components/common/SnackbarProvider';
+} from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { projectApi, taskApi } from "../api";
+import TaskBoard from "../features/tasks/TaskBoard";
+import TaskFormModal from "../features/tasks/TaskFormModal";
+import ConfirmDialog from "../components/common/ConfirmDialog";
+import type { Task } from "../api/types";
+import { useSnackbar } from "../components/common/SnackbarProvider";
 
 const ProjectDetail = () => {
   const { id } = useParams();
@@ -29,8 +29,12 @@ const ProjectDetail = () => {
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
   const [showProjectDelete, setShowProjectDelete] = useState(false);
 
-  const { data: project, isLoading: projectLoading, isError: projectError } = useQuery({
-    queryKey: ['project', id],
+  const {
+    data: project,
+    isLoading: projectLoading,
+    isError: projectError,
+  } = useQuery({
+    queryKey: ["project", id],
     queryFn: async () => {
       const { data } = await projectApi.get(id!);
       return data;
@@ -39,11 +43,15 @@ const ProjectDetail = () => {
   });
 
   if (projectError) {
-    showError('Failed to load project');
+    showError("Failed to load project");
   }
 
-  const { data: tasksResponse, isLoading: tasksLoading, isError: tasksError } = useQuery({
-    queryKey: ['tasks', id],
+  const {
+    data: tasksResponse,
+    isLoading: tasksLoading,
+    isError: tasksError,
+  } = useQuery({
+    queryKey: ["tasks", id],
     queryFn: async () => {
       const { data } = await taskApi.listByProject(id!);
       return data;
@@ -56,48 +64,67 @@ const ProjectDetail = () => {
   const deleteTaskMutation = useMutation({
     mutationFn: taskApi.delete,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks', id] });
-      showSuccess('Task deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ["tasks", id] });
+      showSuccess("Task deleted successfully");
+      setTaskToDelete(null);
     },
     onError: (err: unknown) => {
       const axiosError = err as { response?: { data?: { message?: string } } };
-      showError(axiosError.response?.data?.message || 'Failed to delete task');
+      showError(axiosError.response?.data?.message || "Failed to delete task");
     },
   });
 
   const deleteProjectMutation = useMutation({
     mutationFn: () => projectApi.delete(id!),
     onSuccess: () => {
-      showSuccess('Project deleted successfully');
-      navigate('/projects');
+      showSuccess("Project deleted successfully");
+      navigate("/projects");
     },
     onError: (err: unknown) => {
       const axiosError = err as { response?: { data?: { message?: string } } };
-      showError(axiosError.response?.data?.message || 'Failed to delete project');
+      showError(
+        axiosError.response?.data?.message || "Failed to delete project",
+      );
     },
   });
 
-  const handleConfirmDelete = () => {
+  const deleteDialogState = useMemo(() => {
     if (taskToDelete) {
+      return {
+        type: "task" as const,
+        title: "Delete Task",
+        message: `Are you sure you want to delete the task "${taskToDelete.title}"?`,
+      };
+    }
+    if (showProjectDelete && project) {
+      return {
+        type: "project" as const,
+        title: "Delete Project",
+        message: `Are you sure you want to delete the project "${project.name}"? This will also delete all tasks in this project.`,
+      };
+    }
+    return null;
+  }, [taskToDelete, showProjectDelete, project]);
+
+  const isDeleteDialogOpen = deleteDialogState !== null;
+
+  const handleConfirmDelete = useCallback(() => {
+    if (deleteDialogState?.type === "task" && taskToDelete) {
       deleteTaskMutation.mutate(taskToDelete.id);
-      setTaskToDelete(null);
-    } else if (showProjectDelete) {
+    } else if (deleteDialogState?.type === "project") {
       deleteProjectMutation.mutate();
       setShowProjectDelete(false);
     }
-  };
+  }, [deleteDialogState, taskToDelete, deleteTaskMutation, deleteProjectMutation]);
 
-  const isDeleteDialogOpen = taskToDelete !== null || showProjectDelete;
-  const deleteDialogTitle = taskToDelete ? 'Delete Task' : 'Delete Project';
-  const deleteDialogMessage = taskToDelete
-    ? `Are you sure you want to delete the task "${taskToDelete.title}"?`
-    : project
-      ? `Are you sure you want to delete the project "${project.name}"? This will also delete all tasks in this project.`
-      : '';
+  const handleCancelDelete = useCallback(() => {
+    setTaskToDelete(null);
+    setShowProjectDelete(false);
+  }, []);
 
   if (projectLoading || tasksLoading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
         <CircularProgress />
       </Box>
     );
@@ -122,18 +149,25 @@ const ProjectDetail = () => {
   return (
     <Box>
       <Breadcrumbs sx={{ mb: 2 }}>
-        <Link 
-          underline="hover" 
-          color="inherit" 
-          onClick={() => navigate('/projects')}
-          sx={{ cursor: 'pointer' }}
+        <Link
+          underline="hover"
+          color="inherit"
+          onClick={() => navigate("/projects")}
+          sx={{ cursor: "pointer" }}
         >
           Projects
         </Link>
         <Typography color="text.primary">{project.name}</Typography>
       </Breadcrumbs>
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
+      >
         <Box>
           <Typography variant="h4">{project.name}</Typography>
           {project.description && (
@@ -142,7 +176,7 @@ const ProjectDetail = () => {
             </Typography>
           )}
         </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ display: "flex", gap: 1 }}>
           <Button
             variant="outlined"
             color="error"
@@ -178,7 +212,7 @@ const ProjectDetail = () => {
           onDeleteTask={(task) => setTaskToDelete(task)}
         />
       ) : (
-        <Box sx={{ textAlign: 'center', mt: 4 }}>
+        <Box sx={{ textAlign: "center", mt: 4 }}>
           <Typography variant="h6" color="text.secondary">
             No tasks yet
           </Typography>
@@ -200,13 +234,10 @@ const ProjectDetail = () => {
 
       <ConfirmDialog
         open={isDeleteDialogOpen}
-        title={deleteDialogTitle}
-        message={deleteDialogMessage}
+        title={deleteDialogState?.title ?? ""}
+        message={deleteDialogState?.message ?? ""}
         onConfirm={handleConfirmDelete}
-        onCancel={() => {
-          setTaskToDelete(null);
-          setShowProjectDelete(false);
-        }}
+        onCancel={handleCancelDelete}
       />
     </Box>
   );
