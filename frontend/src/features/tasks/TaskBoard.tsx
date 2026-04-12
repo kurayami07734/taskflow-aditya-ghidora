@@ -1,4 +1,4 @@
-import { Box, Typography, Paper } from '@mui/material';
+import { Box, Typography, Paper, useTheme } from '@mui/material';
 import type { Task } from '../../api/types';
 import TaskCard from './TaskCard';
 
@@ -20,6 +20,7 @@ const columns: Column[] = [
 ];
 
 const TaskBoard = ({ tasks, onEditTask, onDeleteTask }: TaskBoardProps) => {
+  const theme = useTheme();
   const getTasksByStatus = (status: Task['status']) => 
     tasks.filter((task) => task.status === status);
 
@@ -32,7 +33,7 @@ const TaskBoard = ({ tasks, onEditTask, onDeleteTask }: TaskBoardProps) => {
             flex: '1 1 300px', 
             maxWidth: { xs: '100%', md: 'calc(33.333% - 16px)' },
             p: 2,
-            bgcolor: 'grey.50'
+            bgcolor: theme.palette.mode === 'dark' ? 'grey.900' : 'grey.50'
           }}
         >
           <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>

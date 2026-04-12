@@ -10,11 +10,16 @@ import {
   InputAdornment,
   IconButton,
   LinearProgress,
+  AppBar,
+  Toolbar,
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import LightMode from '@mui/icons-material/LightMode';
+import DarkMode from '@mui/icons-material/DarkMode';
 import { authApi } from '../api';
 import { useAuthStore } from '../stores/authStore';
+import { useThemeStore } from '../stores/themeStore';
 import { useSnackbar } from '../components/common/SnackbarProvider';
 
 const getPasswordStrength = (password: string): { score: number; label: string; color: string } => {
@@ -36,6 +41,7 @@ const Register = () => {
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
   const { showError } = useSnackbar();
+  const { mode, toggleMode } = useThemeStore();
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -59,100 +65,122 @@ const Register = () => {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        bgcolor: 'background.default',
-      }}
-    >
-      <Paper sx={{ p: 4, width: 400 }}>
-        <Typography variant="h5" component="h1" gutterBottom>
-          Register
-        </Typography>
-        
-        <form onSubmit={handleSubmit}>
-          <TextField
-            fullWidth
-            label="Name"
-            margin="normal"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            required
-          />
-          <TextField
-            fullWidth
-            label="Email"
-            type="email"
-            margin="normal"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            required
-          />
-          <TextField
-            fullWidth
-            label="Password"
-            type={showPassword ? 'text' : 'password'}
-            margin="normal"
-            value={formData.password}
-            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            required
-            helperText="Minimum 8 characters"
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowPassword(!showPassword)}
-                      edge="end"
-                    >
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              },
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', position: 'relative' }}>
+      <AppBar position="absolute" color="transparent" elevation={0}>
+        <Toolbar>
+          <Typography variant="h5" component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
+            TaskFlow
+          </Typography>
+          <IconButton
+            onClick={toggleMode}
+            title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}
+            sx={{
+              bgcolor: 'background.paper',
+              borderRadius: 2,
+              position: 'absolute',
+              right: 16,
+              '&:hover': { bgcolor: 'action.hover' },
             }}
-          />
-          {formData.password && (
-            <Box sx={{ mt: 1, mb: 2 }}>
-              <LinearProgress
-                variant="determinate"
-                value={passwordStrength.score * 100}
-                color={passwordStrength.color as 'error' | 'warning' | 'success'}
-                sx={{ height: 6, borderRadius: 3 }}
-              />
-              <Typography variant="caption" sx={{ mt: 0.5, display: 'block' }}>
-                Password strength: 
-                <Typography
-                  component="span"
-                  variant="caption"
-                  sx={{ color: `${passwordStrength.color}.main`, fontWeight: 500, ml: 0.5 }}
-                >
-                  {passwordStrength.label}
-                </Typography>
-              </Typography>
-            </Box>
-          )}
-          <Button
-            fullWidth
-            variant="contained"
-            type="submit"
-            disabled={loading}
-            sx={{ mt: 1 }}
           >
-            {loading ? 'Registering...' : 'Register'}
-          </Button>
-        </form>
-        
-        <Typography variant="body2" sx={{ mt: 2, textAlign: 'center' }}>
-          Already have an account?{' '}
-          <Link component={RouterLink} to="/login">
-            Login
-          </Link>
-        </Typography>
-      </Paper>
+            {mode === 'light' ? <DarkMode /> : <LightMode />}
+          </IconButton>
+        </Toolbar>
+      </AppBar>
+
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+        }}
+      >
+        <Paper sx={{ p: 4, width: 400 }}>
+          <Typography variant="h4" component="h1" gutterBottom sx={{ textAlign: 'center', mb: 3 }}>
+            Create Account
+          </Typography>
+          
+          <form onSubmit={handleSubmit}>
+            <TextField
+              fullWidth
+              label="Name"
+              margin="normal"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+            />
+            <TextField
+              fullWidth
+              label="Email"
+              type="email"
+              margin="normal"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              required
+            />
+            <TextField
+              fullWidth
+              label="Password"
+              type={showPassword ? 'text' : 'password'}
+              margin="normal"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              required
+              helperText="Minimum 8 characters"
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPassword(!showPassword)}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
+            {formData.password && (
+              <Box sx={{ mt: 1, mb: 2 }}>
+                <LinearProgress
+                  variant="determinate"
+                  value={passwordStrength.score * 100}
+                  color={passwordStrength.color as 'error' | 'warning' | 'success'}
+                  sx={{ height: 6, borderRadius: 3 }}
+                />
+                <Typography variant="caption" sx={{ mt: 0.5, display: 'block' }}>
+                  Password strength: 
+                  <Typography
+                    component="span"
+                    variant="caption"
+                    sx={{ color: `${passwordStrength.color}.main`, fontWeight: 500, ml: 0.5 }}
+                  >
+                    {passwordStrength.label}
+                  </Typography>
+                </Typography>
+              </Box>
+            )}
+            <Button
+              fullWidth
+              variant="contained"
+              type="submit"
+              disabled={loading}
+              sx={{ mt: 1 }}
+            >
+              {loading ? 'Registering...' : 'Register'}
+            </Button>
+          </form>
+          
+          <Typography variant="body2" sx={{ mt: 2, textAlign: 'center' }}>
+            Already have an account?{' '}
+            <Link component={RouterLink} to="/login">
+              Login
+            </Link>
+          </Typography>
+        </Paper>
+      </Box>
     </Box>
   );
 };

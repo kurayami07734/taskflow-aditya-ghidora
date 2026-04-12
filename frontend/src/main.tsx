@@ -7,7 +7,8 @@ import CssBaseline from '@mui/material/CssBaseline'
 import { LocalizationProvider } from '@mui/x-date-pickers'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import App from './App'
-import theme from './theme/theme'
+import { getTheme } from './theme/theme'
+import { useThemeStore } from './stores/themeStore'
 import { useAuthStore } from './stores/authStore'
 import { SnackbarProvider } from './components/common/SnackbarProvider'
 
@@ -25,10 +26,15 @@ const InitializeAuth = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>
 }
 
+const ThemedApp = ({ children }: { children: React.ReactNode }) => {
+  const mode = useThemeStore((state) => state.mode)
+  return <ThemeProvider theme={getTheme(mode)}>{children}</ThemeProvider>
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider theme={theme}>
+      <ThemedApp>
         <CssBaseline />
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <SnackbarProvider>
@@ -39,7 +45,7 @@ createRoot(document.getElementById('root')!).render(
             </InitializeAuth>
           </SnackbarProvider>
         </LocalizationProvider>
-      </ThemeProvider>
+      </ThemedApp>
     </QueryClientProvider>
   </StrictMode>,
 )
