@@ -1,10 +1,5 @@
 import { create } from 'zustand';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-}
+import type { User } from '../api/types';
 
 interface AuthState {
   user: User | null;

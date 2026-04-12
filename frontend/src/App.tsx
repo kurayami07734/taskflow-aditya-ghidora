@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import AuthGuard from './components/auth/AuthGuard'
 import AppLayout from './components/layout/AppLayout'
 import Login from './pages/Login'
@@ -7,6 +8,16 @@ import ProjectList from './pages/ProjectList'
 import ProjectDetail from './pages/ProjectDetail'
 
 function App() {
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      navigate('/login', { replace: true })
+    }
+    window.addEventListener('auth:unauthorized', handleUnauthorized)
+    return () => window.removeEventListener('auth:unauthorized', handleUnauthorized)
+  }, [navigate])
+
   return (
     <Routes>
       <Route path="/login" element={<Login />} />

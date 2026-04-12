@@ -22,6 +22,10 @@ import { useAuthStore } from '../stores/authStore';
 import { useThemeStore } from '../stores/themeStore';
 import { useSnackbar } from '../components/common/SnackbarProvider';
 
+const validateEmail = (email: string): boolean => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+};
+
 const getPasswordStrength = (password: string): { score: number; label: string; color: string } => {
   if (!password) return { score: 0, label: '', color: 'grey' };
   
@@ -43,13 +47,48 @@ const Register = () => {
   const { showError } = useSnackbar();
   const { mode, toggleMode } = useThemeStore();
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  const [errors, setErrors] = useState({ name: '', email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const passwordStrength = useMemo(() => getPasswordStrength(formData.password), [formData.password]);
 
+  const validateForm = (): boolean => {
+    const newErrors = { name: '', email: '', password: '' };
+    let isValid = true;
+
+    if (!formData.name) {
+      newErrors.name = 'Name is required';
+      isValid = false;
+    }
+
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+      isValid = false;
+    } else if (!validateEmail(formData.email)) {
+      newErrors.email = 'Invalid email format';
+      isValid = false;
+    }
+
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+      isValid = false;
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -106,7 +145,14 @@ const Register = () => {
               label="Name"
               margin="normal"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, name: e.target.value });
+                if (errors.name) {
+                  setErrors({ ...errors, name: '' });
+                }
+              }}
+              error={!!errors.name}
+              helperText={errors.name}
               required
             />
             <TextField
@@ -115,7 +161,14 @@ const Register = () => {
               type="email"
               margin="normal"
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, email: e.target.value });
+                if (errors.email) {
+                  setErrors({ ...errors, email: '' });
+                }
+              }}
+              error={!!errors.email}
+              helperText={errors.email}
               required
             />
             <TextField
@@ -124,9 +177,15 @@ const Register = () => {
               type={showPassword ? 'text' : 'password'}
               margin="normal"
               value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, password: e.target.value });
+                if (errors.password) {
+                  setErrors({ ...errors, password: '' });
+                }
+              }}
+              error={!!errors.password}
+              helperText={errors.password || "Minimum 8 characters"}
               required
-              helperText="Minimum 8 characters"
               slotProps={{
                 input: {
                   endAdornment: (
