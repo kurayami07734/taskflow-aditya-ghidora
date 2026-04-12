@@ -13,8 +13,28 @@ import (
 	"github.com/kurayami07734/taskflow-aditya-ghidora/src/routers"
 	"github.com/kurayami07734/taskflow-aditya-ghidora/src/utils"
 	_ "github.com/lib/pq"
+
+	_ "github.com/kurayami07734/taskflow-aditya-ghidora/docs"
 )
 
+// @title Taskflow API
+// @version 1.0
+// @description API for managing projects and tasks
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.url http://www.example.com/support
+// @contact.email support@example.com
+
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host localhost:5000
+// @BasePath /
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 func main() {
 	cfg := utils.LoadConfig()
 

@@ -24,40 +24,55 @@ type updateTaskRequest struct {
 	DueDate     *string `json:"due_date"`
 }
 
+// @Summary Update a task
+// @Description Update an existing task
+// @Tags tasks
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Task ID"
+// @Param request body updateTaskRequest true "Update task request"
+// @Success 200 {object} taskResponse
+// @Failure 400 {object} utils.BadRequestError
+// @Failure 401 {object} utils.UnauthorizedError
+// @Failure 403 {object} utils.ForbiddenError
+// @Failure 404 {object} utils.NotFoundError
+// @Failure 500 {object} utils.InternalError
+// @Router /tasks/{id} [patch]
 func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	userID, ok := middleware.GetUserID(r.Context())
 	if !ok {
-		utils.WriteError(w, http.StatusUnauthorized, "unauthorized")
+		utils.WriteUnauthorized(w, "unauthorized")
 		return
 	}
 
 	taskIDStr := chi.URLParam(r, "id")
 	taskID, err := uuid.Parse(taskIDStr)
 	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, "invalid task id")
+		utils.WriteBadRequest(w, "invalid task id")
 		return
 	}
 
 	task, err := h.TaskStore.GetByID(taskID)
 	if err != nil {
-		utils.WriteError(w, http.StatusNotFound, "task not found")
+		utils.WriteNotFound(w, "task not found")
 		return
 	}
 
 	project, err := h.ProjectStore.GetByID(task.ProjectID)
 	if err != nil {
-		utils.WriteError(w, http.StatusNotFound, "task not found")
+		utils.WriteNotFound(w, "task not found")
 		return
 	}
 
 	if project.OwnerID != userID {
-		utils.WriteError(w, http.StatusForbidden, "you don't have permission to access this task")
+		utils.WriteForbidden(w, "you don't have permission to access this task")
 		return
 	}
 
 	var req updateTaskRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, "invalid request body")
+		utils.WriteBadRequest(w, "invalid request body")
 		return
 	}
 
@@ -130,7 +145,7 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	updatedTask, err := h.TaskStore.Update(taskID, title, description, status, priority, assigneeID, dueDate)
 	if err != nil {
 		slog.Error("Failed to update task", "error", err, "task_id", taskID)
-		utils.WriteError(w, http.StatusInternalServerError, "failed to update task")
+		utils.WriteInternalError(w, "failed to update task")
 		return
 	}
 
@@ -159,39 +174,52 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// @Summary Delete a task
+// @Description Delete a task by ID
+// @Tags tasks
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Task ID"
+// @Success 204
+// @Failure 401 {object} utils.UnauthorizedError
+// @Failure 403 {object} utils.ForbiddenError
+// @Failure 404 {object} utils.NotFoundError
+// @Failure 500 {object} utils.InternalError
+// @Router /tasks/{id} [delete]
 func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	userID, ok := middleware.GetUserID(r.Context())
 	if !ok {
-		utils.WriteError(w, http.StatusUnauthorized, "unauthorized")
+		utils.WriteUnauthorized(w, "unauthorized")
 		return
 	}
 
 	taskIDStr := chi.URLParam(r, "id")
 	taskID, err := uuid.Parse(taskIDStr)
 	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, "invalid task id")
+		utils.WriteBadRequest(w, "invalid task id")
 		return
 	}
 
 	task, err := h.TaskStore.GetByID(taskID)
 	if err != nil {
-		utils.WriteError(w, http.StatusNotFound, "task not found")
+		utils.WriteNotFound(w, "task not found")
 		return
 	}
 
 	project, err := h.ProjectStore.GetByID(task.ProjectID)
 	if err != nil {
-		utils.WriteError(w, http.StatusNotFound, "task not found")
+		utils.WriteNotFound(w, "task not found")
 		return
 	}
 
 	if project.OwnerID != userID {
-		utils.WriteError(w, http.StatusForbidden, "you don't have permission to access this task")
+		utils.WriteForbidden(w, "you don't have permission to access this task")
 		return
 	}
 
 	if err := h.TaskStore.Delete(taskID); err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, "failed to delete task")
+		utils.WriteInternalError(w, "failed to delete task")
 		return
 	}
 

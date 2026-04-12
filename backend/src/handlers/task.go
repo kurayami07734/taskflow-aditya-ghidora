@@ -41,34 +41,49 @@ type createTaskRequest struct {
 	DueDate     *string `json:"due_date"`
 }
 
+// @Summary Create a task
+// @Description Create a new task in a project
+// @Tags tasks
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Project ID"
+// @Param request body createTaskRequest true "Create task request"
+// @Success 201 {object} taskResponse
+// @Failure 400 {object} utils.BadRequestError
+// @Failure 401 {object} utils.UnauthorizedError
+// @Failure 403 {object} utils.ForbiddenError
+// @Failure 404 {object} utils.NotFoundError
+// @Failure 500 {object} utils.InternalError
+// @Router /projects/{id}/tasks [post]
 func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	userID, ok := middleware.GetUserID(r.Context())
 	if !ok {
-		utils.WriteError(w, http.StatusUnauthorized, "unauthorized")
+		utils.WriteUnauthorized(w, "unauthorized")
 		return
 	}
 
 	projectIDStr := chi.URLParam(r, "id")
 	projectID, err := uuid.Parse(projectIDStr)
 	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, "invalid project id")
+		utils.WriteBadRequest(w, "invalid project id")
 		return
 	}
 
 	project, err := h.ProjectStore.GetByID(projectID)
 	if err != nil {
-		utils.WriteError(w, http.StatusNotFound, "project not found")
+		utils.WriteNotFound(w, "project not found")
 		return
 	}
 
 	if project.OwnerID != userID {
-		utils.WriteError(w, http.StatusForbidden, "you don't have permission to access this project")
+		utils.WriteForbidden(w, "you don't have permission to access this project")
 		return
 	}
 
 	var req createTaskRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, "invalid request body")
+		utils.WriteBadRequest(w, "invalid request body")
 		return
 	}
 
@@ -118,7 +133,7 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	task, err := h.TaskStore.Create(req.Title, req.Description, projectID, models.StatusTodo, models.TaskPriority(priority), assigneeID, dueDate)
 	if err != nil {
 		slog.Error("Failed to create task", "error", err, "project_id", projectID)
-		utils.WriteError(w, http.StatusInternalServerError, "failed to create task")
+		utils.WriteInternalError(w, "failed to create task")
 		return
 	}
 
@@ -153,28 +168,46 @@ type listTasksResponse struct {
 	Pagination utils.Pagination `json:"pagination"`
 }
 
+// @Summary List tasks
+// @Description Get all tasks for a project with optional filters and pagination
+// @Tags tasks
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Project ID"
+// @Param page query int false "Page number"
+// @Param limit query int false "Items per page"
+// @Param status query string false "Filter by status"
+// @Param assignee query string false "Filter by assignee ID"
+// @Success 200 {object} listTasksResponse
+// @Failure 400 {object} utils.BadRequestError
+// @Failure 401 {object} utils.UnauthorizedError
+// @Failure 403 {object} utils.ForbiddenError
+// @Failure 404 {object} utils.NotFoundError
+// @Failure 500 {object} utils.InternalError
+// @Router /projects/{id}/tasks [get]
 func (h *TaskHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
 	userID, ok := middleware.GetUserID(r.Context())
 	if !ok {
-		utils.WriteError(w, http.StatusUnauthorized, "unauthorized")
+		utils.WriteUnauthorized(w, "unauthorized")
 		return
 	}
 
 	projectIDStr := chi.URLParam(r, "id")
 	projectID, err := uuid.Parse(projectIDStr)
 	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, "invalid project id")
+		utils.WriteBadRequest(w, "invalid project id")
 		return
 	}
 
 	project, err := h.ProjectStore.GetByID(projectID)
 	if err != nil {
-		utils.WriteError(w, http.StatusNotFound, "project not found")
+		utils.WriteNotFound(w, "project not found")
 		return
 	}
 
 	if project.OwnerID != userID {
-		utils.WriteError(w, http.StatusForbidden, "you don't have permission to access this project")
+		utils.WriteForbidden(w, "you don't have permission to access this project")
 		return
 	}
 
@@ -200,14 +233,14 @@ func (h *TaskHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
 	tasks, err := h.TaskStore.GetByProjectIDPaginated(projectID, status, assigneeID, limit, offset)
 	if err != nil {
 		slog.Error("Failed to fetch tasks", "error", err, "project_id", projectID)
-		utils.WriteError(w, http.StatusInternalServerError, "failed to fetch tasks")
+		utils.WriteInternalError(w, "failed to fetch tasks")
 		return
 	}
 
 	total, err := h.TaskStore.CountByProjectID(projectID, status, assigneeID)
 	if err != nil {
 		slog.Error("Failed to count tasks", "error", err, "project_id", projectID)
-		utils.WriteError(w, http.StatusInternalServerError, "failed to fetch tasks")
+		utils.WriteInternalError(w, "failed to fetch tasks")
 		return
 	}
 

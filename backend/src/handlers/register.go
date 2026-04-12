@@ -27,11 +27,20 @@ type registerResponse struct {
 	User  userResponse `json:"user"`
 }
 
+// @Summary Register a new user
+// @Description Register a new user with name, email and password
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body registerRequest true "Register request"
+// @Success 201 {object} registerResponse
+// @Failure 400 {object} utils.BadRequestError
+// @Router /auth/register [post]
 func (h *RegisterHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	var req registerRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, "invalid request payload")
+		utils.WriteBadRequest(w, "invalid request payload")
 		return
 	}
 
@@ -59,29 +68,29 @@ func (h *RegisterHandler) RegisterHandler(w http.ResponseWriter, r *http.Request
 
 	existingUser, err := h.Store.GetByEmail(req.Email)
 	if existingUser != nil {
-		utils.WriteError(w, http.StatusBadRequest, "User already registered!")
+		utils.WriteBadRequest(w, "User already registered!")
 		return
 	}
 
 	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), 12)
 	if err != nil {
 		slog.Error("Failed to generate password", "error", err)
-		utils.WriteError(w, http.StatusInternalServerError, "Internal server error")
+		utils.WriteInternalError(w, "Internal server error")
 		return
 	}
 
 	user, err := h.Store.Create(req.Name, req.Email, string(hashed))
 	if err != nil {
-		slog.Error("Failed to save user", "error", err)
-		utils.WriteError(w, http.StatusInternalServerError, "Internal server error")
+		slog.Error("Failed to save user", "error", err, "email", req.Email)
+		utils.WriteInternalError(w, "Internal server error")
 		return
 	}
 
 	token, err := utils.GenerateToken(user.ID, user.Email, h.Config.JwtSecret)
 
 	if err != nil {
-		slog.Error("Failed to generate token", "error", err)
-		utils.WriteError(w, http.StatusInternalServerError, "Internal server error")
+		slog.Error("Failed to generate token", "error", err, "user_id", user.ID)
+		utils.WriteInternalError(w, "Internal server error")
 		return
 	}
 
