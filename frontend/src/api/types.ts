@@ -32,7 +32,7 @@ export interface Task {
   status: 'todo' | 'in_progress' | 'done';
   priority: 'low' | 'medium' | 'high';
   due_date: string | null;
-  assignee: string | null;
+  assignee_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -74,7 +74,7 @@ export interface CreateTaskRequest {
   status?: 'todo' | 'in_progress' | 'done';
   priority?: 'low' | 'medium' | 'high';
   due_date?: string | null;
-  assignee?: string | null;
+  assignee_id?: string | null;
 }
 
 export interface UpdateTaskRequest {
@@ -83,5 +83,5 @@ export interface UpdateTaskRequest {
   status?: 'todo' | 'in_progress' | 'done';
   priority?: 'low' | 'medium' | 'high';
   due_date?: string | null;
-  assignee?: string | null;
+  assignee_id?: string | null;
 }
