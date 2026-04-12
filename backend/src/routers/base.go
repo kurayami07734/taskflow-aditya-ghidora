@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/jmoiron/sqlx"
 	slogm "github.com/kurayami07734/taskflow-aditya-ghidora/src/middleware"
 	"github.com/kurayami07734/taskflow-aditya-ghidora/src/utils"
@@ -19,6 +20,14 @@ func CreateBaseRouter(db *sqlx.DB, cfg utils.Config) *chi.Mux {
 
 	r := chi.NewRouter()
 
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:5173", "http://localhost:80", "http://localhost"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
 	r.Use(middleware.Recoverer)
 	r.Use(slogm.RecoverWithLog(logger))
 	r.Use(middleware.RequestLogger(slogm.NewSlogLogger(logger)))
