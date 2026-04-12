@@ -24,13 +24,13 @@ const TaskBoard = ({ tasks, onEditTask, onDeleteTask }: TaskBoardProps) => {
     tasks.filter((task) => task.status === status);
 
   return (
-    <Box sx={{ display: 'flex', gap: 3, overflowX: 'auto', pb: 2 }}>
+    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, pb: 2 }}>
       {columns.map((column) => (
         <Paper 
           key={column.id}
           sx={{ 
             flex: '1 1 300px', 
-            minWidth: 280,
+            maxWidth: { xs: '100%', md: 'calc(33.333% - 16px)' },
             p: 2,
             bgcolor: 'grey.50'
           }}
