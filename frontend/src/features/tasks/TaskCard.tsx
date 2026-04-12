@@ -21,7 +21,7 @@ const priorityColors = {
 } as const;
 
 const statusLabels = {
-  todo: 'TODO',
+  todo: 'Todo',
   in_progress: 'In Progress',
   done: 'Done',
 };

@@ -14,7 +14,7 @@ interface Column {
 }
 
 const columns: Column[] = [
-  { id: 'todo', title: 'TODO' },
+  { id: 'todo', title: 'Todo' },
   { id: 'in_progress', title: 'In Progress' },
   { id: 'done', title: 'Done' },
 ];
