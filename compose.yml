@@ -1,13 +1,13 @@
 services:
   api:
     build:
-      context: .
+      context: ./backend
     env_file:
       - .env
     ports:
       - ${PORT}:${PORT}
     volumes:
-      - ./logs:/app/logs
+      - ./backend/logs:/app/logs
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -31,7 +31,7 @@ services:
   migrate:
     image: migrate/migrate
     volumes:
-      - ./migrations:/migrations
+      - ./backend/migrations:/migrations
     depends_on:
       db:
         condition: service_healthy
