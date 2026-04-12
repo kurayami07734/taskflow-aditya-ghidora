@@ -87,6 +87,14 @@ const ProjectDetail = () => {
     }
   };
 
+  const isDeleteDialogOpen = taskToDelete !== null || showProjectDelete;
+  const deleteDialogTitle = taskToDelete ? 'Delete Task' : 'Delete Project';
+  const deleteDialogMessage = taskToDelete
+    ? `Are you sure you want to delete the task "${taskToDelete.title}"?`
+    : project
+      ? `Are you sure you want to delete the project "${project.name}"? This will also delete all tasks in this project.`
+      : '';
+
   if (projectLoading || tasksLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
@@ -191,13 +199,9 @@ const ProjectDetail = () => {
       />
 
       <ConfirmDialog
-        open={!!taskToDelete || showProjectDelete}
-        title={taskToDelete ? 'Delete Task' : 'Delete Project'}
-        message={
-          taskToDelete
-            ? `Are you sure you want to delete the task "${taskToDelete.title}"?`
-            : `Are you sure you want to delete the project "${project.name}"? This will also delete all tasks in this project.`
-        }
+        open={isDeleteDialogOpen}
+        title={deleteDialogTitle}
+        message={deleteDialogMessage}
         onConfirm={handleConfirmDelete}
         onCancel={() => {
           setTaskToDelete(null);
