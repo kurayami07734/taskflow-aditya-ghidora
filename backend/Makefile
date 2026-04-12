@@ -6,10 +6,7 @@ dev:
 	air
 
 build:
-	go build -o ./tmp/main .
-
-run:
-	go run .
+	go build -o ./tmp/main ./src
 
 test:
 	go test ./tests/... -v -p=4 -count=1

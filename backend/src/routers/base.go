@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jmoiron/sqlx"
+	slogm "github.com/kurayami07734/taskflow-aditya-ghidora/src/middleware"
 	"github.com/kurayami07734/taskflow-aditya-ghidora/src/utils"
 
 	httpSwagger "github.com/swaggo/http-swagger/v2"
@@ -14,9 +15,13 @@ import (
 )
 
 func CreateBaseRouter(db *sqlx.DB, cfg utils.Config) *chi.Mux {
+	logger := utils.InitLogger("logs/app.log")
+
 	r := chi.NewRouter()
 
-	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Use(slogm.RecoverWithLog(logger))
+	r.Use(middleware.RequestLogger(slogm.NewSlogLogger(logger)))
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
