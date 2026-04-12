@@ -112,6 +112,12 @@ func TestCreateProjectIntegration(t *testing.T) {
 		if rr.Code != http.StatusCreated {
 			t.Errorf("Expected status 201, got %d", rr.Code)
 		}
+
+		var resp map[string]interface{}
+		json.Unmarshal(rr.Body.Bytes(), &resp)
+		if resp["id"] == nil {
+			t.Error("Expected id in response")
+		}
 	})
 
 	t.Run("create project with missing name returns 400", func(t *testing.T) {
@@ -132,6 +138,12 @@ func TestCreateProjectIntegration(t *testing.T) {
 		if rr.Code != http.StatusBadRequest {
 			t.Errorf("Expected status 400, got %d", rr.Code)
 		}
+
+		var resp map[string]interface{}
+		json.Unmarshal(rr.Body.Bytes(), &resp)
+		if resp["error"] == nil {
+			t.Error("Expected error in response")
+		}
 	})
 
 	t.Run("create project with name less than 3 chars returns 400", func(t *testing.T) {
@@ -151,6 +163,12 @@ func TestCreateProjectIntegration(t *testing.T) {
 
 		if rr.Code != http.StatusBadRequest {
 			t.Errorf("Expected status 400, got %d", rr.Code)
+		}
+
+		var resp map[string]interface{}
+		json.Unmarshal(rr.Body.Bytes(), &resp)
+		if resp["error"] == nil {
+			t.Error("Expected error in response")
 		}
 	})
 

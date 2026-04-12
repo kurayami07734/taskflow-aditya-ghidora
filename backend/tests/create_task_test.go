@@ -164,6 +164,12 @@ func TestCreateTaskIntegration(t *testing.T) {
 		if rr.Code != http.StatusBadRequest {
 			t.Errorf("Expected status 400, got %d", rr.Code)
 		}
+
+		var resp map[string]interface{}
+		json.Unmarshal(rr.Body.Bytes(), &resp)
+		if resp["error"] == nil {
+			t.Error("Expected error in response")
+		}
 	})
 
 	t.Run("create task with title less than 3 chars returns 400", func(t *testing.T) {
@@ -184,6 +190,12 @@ func TestCreateTaskIntegration(t *testing.T) {
 
 		if rr.Code != http.StatusBadRequest {
 			t.Errorf("Expected status 400, got %d", rr.Code)
+		}
+
+		var resp map[string]interface{}
+		json.Unmarshal(rr.Body.Bytes(), &resp)
+		if resp["error"] == nil {
+			t.Error("Expected error in response")
 		}
 	})
 
@@ -207,6 +219,12 @@ func TestCreateTaskIntegration(t *testing.T) {
 
 		if rr.Code != http.StatusForbidden {
 			t.Errorf("Expected status 403, got %d", rr.Code)
+		}
+
+		var resp map[string]interface{}
+		json.Unmarshal(rr.Body.Bytes(), &resp)
+		if resp["error"] == nil {
+			t.Error("Expected error in response")
 		}
 	})
 
