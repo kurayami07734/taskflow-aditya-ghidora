@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
   Box,
@@ -7,10 +7,30 @@ import {
   Button,
   Typography,
   Link,
+  InputAdornment,
+  IconButton,
+  LinearProgress,
 } from '@mui/material';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { authApi } from '../api';
 import { useAuthStore } from '../stores/authStore';
 import { useSnackbar } from '../components/common/SnackbarProvider';
+
+const getPasswordStrength = (password: string): { score: number; label: string; color: string } => {
+  if (!password) return { score: 0, label: '', color: 'grey' };
+  
+  let score = 0;
+  if (password.length >= 8) score += 1;
+  if (password.length >= 12) score += 1;
+  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 1;
+  if (/\d/.test(password)) score += 1;
+  if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score += 1;
+
+  if (score <= 1) return { score: score / 5, label: 'Weak', color: 'error' };
+  if (score <= 3) return { score: score / 5, label: 'Medium', color: 'warning' };
+  return { score: score / 5, label: 'Strong', color: 'success' };
+};
 
 const Register = () => {
   const navigate = useNavigate();
@@ -18,6 +38,9 @@ const Register = () => {
   const { showError } = useSnackbar();
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const passwordStrength = useMemo(() => getPasswordStrength(formData.password), [formData.password]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,18 +94,53 @@ const Register = () => {
           <TextField
             fullWidth
             label="Password"
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             margin="normal"
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
             required
+            helperText="Minimum 8 characters"
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
           />
+          {formData.password && (
+            <Box sx={{ mt: 1, mb: 2 }}>
+              <LinearProgress
+                variant="determinate"
+                value={passwordStrength.score * 100}
+                color={passwordStrength.color as 'error' | 'warning' | 'success'}
+                sx={{ height: 6, borderRadius: 3 }}
+              />
+              <Typography variant="caption" sx={{ mt: 0.5, display: 'block' }}>
+                Password strength: 
+                <Typography
+                  component="span"
+                  variant="caption"
+                  sx={{ color: `${passwordStrength.color}.main`, fontWeight: 500, ml: 0.5 }}
+                >
+                  {passwordStrength.label}
+                </Typography>
+              </Typography>
+            </Box>
+          )}
           <Button
             fullWidth
             variant="contained"
             type="submit"
             disabled={loading}
-            sx={{ mt: 2 }}
+            sx={{ mt: 1 }}
           >
             {loading ? 'Registering...' : 'Register'}
           </Button>
