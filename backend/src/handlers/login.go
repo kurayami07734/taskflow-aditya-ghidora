@@ -27,11 +27,20 @@ type loginResponse struct {
 	User  userResponse `json:"user"`
 }
 
+// @Summary Login user
+// @Description Authenticate user and return JWT token
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body loginRequest true "Login request"
+// @Success 200 {object} loginResponse
+// @Failure 400 {object} utils.BadRequestError
+// @Router /auth/login [post]
 func (h *LoginHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var req loginRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, "invalid request payload")
+		utils.WriteBadRequest(w, "invalid request payload")
 		return
 	}
 
@@ -57,19 +66,19 @@ func (h *LoginHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.Store.GetByEmail(req.Email)
 	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, "Invalid credentials")
+		utils.WriteBadRequest(w, "Invalid credentials")
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
-		utils.WriteError(w, http.StatusBadRequest, "Invalid credentials")
+		utils.WriteBadRequest(w, "Invalid credentials")
 		return
 	}
 
 	token, err := utils.GenerateToken(user.ID, user.Email, h.Config.JwtSecret)
 	if err != nil {
 		slog.Error("Failed to generate token", "error", err)
-		utils.WriteError(w, http.StatusInternalServerError, "Internal server error")
+		utils.WriteInternalError(w, "Internal server error")
 		return
 	}
 

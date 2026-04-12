@@ -7,6 +7,10 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jmoiron/sqlx"
 	"github.com/kurayami07734/taskflow-aditya-ghidora/src/utils"
+
+	httpSwagger "github.com/swaggo/http-swagger/v2"
+
+	_ "github.com/kurayami07734/taskflow-aditya-ghidora/docs"
 )
 
 func CreateBaseRouter(db *sqlx.DB, cfg utils.Config) *chi.Mux {
@@ -16,6 +20,11 @@ func CreateBaseRouter(db *sqlx.DB, cfg utils.Config) *chi.Mux {
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
+
+	r.Get("/docs", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/docs/", http.StatusFound)
+	})
+	r.Get("/docs/*", httpSwagger.Handler())
 
 	authR := CreateAuthRouter(db, cfg)
 	r.Mount("/auth", authR)
