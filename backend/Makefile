@@ -1,6 +1,6 @@
-.PHONY: dev build run
+.PHONY: dev build run test
 
-override export DB_HOST = localhost
+export DB_HOST := localhost
 
 dev:
 	air
@@ -10,3 +10,6 @@ build:
 
 run:
 	go run .
+
+test:
+	go test ./tests/... -v -p=4 -count=1
