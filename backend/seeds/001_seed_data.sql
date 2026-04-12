@@ -1,13 +1,14 @@
 -- Seed data for testing
--- Password: testpassword123 (bcrypt hash with cost 12)
--- Hash: $2a$12$e8R4wKR0gdiNFKUEFXzv7OD4VFcB3lzTJxiHM5wUJB6/Wd8fScZXm
+-- Email: test@example.com
+-- Password: password123 (bcrypt hash with cost 12)
+-- Hash: $2a$12$HkHVdkjAFjJWaHEgevQl4OC6d3BpyXJZQbygFnzpWYFJZL3YjjTnK
 
 INSERT INTO users (id, name, email, password, created_at) 
 VALUES (
     '028de2bc-6c51-4eb4-994a-0b305d507b65',
     'Test User',
     'test@example.com',
-    '$2a$12$e8R4wKR0gdiNFKUEFXzv7OD4VFcB3lzTJxiHM5wUJB6/Wd8fScZXm',
+    '$2a$12$HkHVdkjAFjJWaHEgevQl4OC6d3BpyXJZQbygFnzpWYFJZL3YjjTnK',
     NOW()
 ) ON CONFLICT (email) DO NOTHING;
 
