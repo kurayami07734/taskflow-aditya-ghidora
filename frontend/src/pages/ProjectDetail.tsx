@@ -32,7 +32,7 @@ const ProjectDetail = () => {
     enabled: !!id,
   });
 
-  const { data: tasks, isLoading: tasksLoading, isError: tasksError } = useQuery({
+  const { data: tasksResponse, isLoading: tasksLoading, isError: tasksError } = useQuery({
     queryKey: ['tasks', id],
     queryFn: async () => {
       const { data } = await taskApi.listByProject(id!);
@@ -40,6 +40,8 @@ const ProjectDetail = () => {
     },
     enabled: !!id,
   });
+
+  const tasks = tasksResponse?.tasks || [];
 
   const deleteTaskMutation = useMutation({
     mutationFn: taskApi.delete,
