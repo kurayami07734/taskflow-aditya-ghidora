@@ -3,6 +3,7 @@ import type {
   LoginRequest,
   RegisterRequest,
   AuthResponse,
+  User,
   Project,
   ProjectListResponse,
   CreateProjectRequest,
@@ -19,6 +20,12 @@ export const authApi = {
   
   register: (data: RegisterRequest) =>
     api.post<AuthResponse>('/auth/register', data),
+};
+
+export const userApi = {
+  get: (id: string) => api.get<User>(`/users/${id}`),
+  
+  search: (query: string) => api.get<User[]>(`/users/search?q=${encodeURIComponent(query)}`),
 };
 
 export const projectApi = {
