@@ -11,6 +11,7 @@ Taskflow is a full-stack project and task management application. The backend is
 5. [Test Credentials](#5-test-credentials)
 6. [API Reference](#6-api-reference)
 7. [What You'd Do With More Time](#7-what-youd-do-with-more-time)
+8. [AI Disclosure](#8-ai-disclosure)
 
 ---
 
@@ -259,3 +260,28 @@ Full API documentation (Swagger) is available at http://localhost:8080/docs/
 6. **Accessibility audit** - Ensure WCAG compliance
 7. **Add internationalization** - i18next for multi-language support
 8. **Optimistic updates** - Better UX for mutations
+
+---
+
+## 8. AI Disclosure
+
+This project was developed with significant assistance from AI tools throughout the development process:
+
+#### Backend Development
+- **Initial Setup**: Used Gemini Web for reference and initial setup
+- **Pattern Creation**: Established fundamental patterns and structure. (Auth APIs were mostly written by hand)
+- **Feature Implementation**: Used Opencode to implement the majority of remaining features after patterns were established (Project and Tasks APIs were handed to opencode)
+- **Manual Verification**: All backend code was manually reviewed and tested for functionality
+
+#### Frontend Development  
+- **Planning**: Used Gemini Web to create the initial project architecture and component structure
+- **Implementation**: Handed off the plan to Opencode for development
+- **Manual Verification**: Frontend components and functionality were manually verified and tested
+- **Quality Assurance**: Ensured user experience, styling, and interactions meet standards through manual testing
+
+#### Tools Used
+- **Opencode**: Primary development assistant for code implementation
+- **Gemini Web**: Backend reference, initial setup, initial frontend planning and architecture
+
+#### Human Oversight
+- All AI-generated code was reviewed and tested manually
