@@ -1,5 +1,7 @@
 .PHONY: dev build run
 
+override export DB_HOST = localhost
+
 dev:
 	air
 

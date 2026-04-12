@@ -27,7 +27,7 @@ func (c Config) GetDbUrl() string {
 }
 
 func LoadConfig() Config {
-	_ = godotenv.Load()
+	_ = godotenv.Load("../.env")
 
 	var cfg Config
 	if err := env.Parse(&cfg); err != nil {
