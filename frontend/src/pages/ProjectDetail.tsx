@@ -15,11 +15,13 @@ import { projectApi, taskApi } from '../api';
 import TaskBoard from '../features/tasks/TaskBoard';
 import TaskFormModal from '../features/tasks/TaskFormModal';
 import type { Task } from '../api/types';
+import { useSnackbar } from '../components/common/SnackbarProvider';
 
 const ProjectDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { showError } = useSnackbar();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
@@ -31,6 +33,10 @@ const ProjectDetail = () => {
     },
     enabled: !!id,
   });
+
+  if (projectError) {
+    showError('Failed to load project');
+  }
 
   const { data: tasksResponse, isLoading: tasksLoading, isError: tasksError } = useQuery({
     queryKey: ['tasks', id],
@@ -47,6 +53,10 @@ const ProjectDetail = () => {
     mutationFn: taskApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', id] });
+    },
+    onError: (err: unknown) => {
+      const axiosError = err as { response?: { data?: { message?: string } } };
+      showError(axiosError.response?.data?.message || 'Failed to delete task');
     },
   });
 

@@ -9,6 +9,7 @@ import {
 } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectApi } from '../../api';
+import { useSnackbar } from '../../components/common/SnackbarProvider';
 
 interface CreateProjectModalProps {
   open: boolean;
@@ -17,6 +18,7 @@ interface CreateProjectModalProps {
 
 const CreateProjectModal = ({ open, onClose }: CreateProjectModalProps) => {
   const queryClient = useQueryClient();
+  const { showError, showSuccess } = useSnackbar();
   const [formData, setFormData] = useState({ name: '', description: '' });
 
   const mutation = useMutation({
@@ -25,6 +27,11 @@ const CreateProjectModal = ({ open, onClose }: CreateProjectModalProps) => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setFormData({ name: '', description: '' });
       onClose();
+      showSuccess('Project created successfully');
+    },
+    onError: (err: unknown) => {
+      const axiosError = err as { response?: { data?: { message?: string } } };
+      showError(axiosError.response?.data?.message || 'Failed to create project');
     },
   });
 
@@ -33,8 +40,13 @@ const CreateProjectModal = ({ open, onClose }: CreateProjectModalProps) => {
     mutation.mutate(formData);
   };
 
+  const handleClose = () => {
+    setFormData({ name: '', description: '' });
+    onClose();
+  };
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <form onSubmit={handleSubmit}>
         <DialogTitle>Create New Project</DialogTitle>
         <DialogContent>
@@ -58,7 +70,7 @@ const CreateProjectModal = ({ open, onClose }: CreateProjectModalProps) => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={handleClose}>Cancel</Button>
           <Button 
             type="submit" 
             variant="contained"
